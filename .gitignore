@@ -1,0 +1,53 @@
+# Python
+__pycache__/
+*.py[cod]
+*.ipynb_checkpoints
+*.egg-info/
+*.egg
+*.pyo
+*.pyd
+*.db
+*.sqlite3
+
+#
+/ch-simsv2s
+/cmumosei
+/MSA_get_pkl/ch_video
+/MSA_get_pkl/selected_video
+/MSA_get_pkl/modified_meta.csv
+/MSA_get_pkl/selected_meta.csv
+/Multimodal-Sentiment-Analysis-with-MOSEI-Dataset/data
+/Multimodal-Sentiment-Analysis-with-MOSEI-Dataset/log
+/Multimodal-Sentiment-Analysis-with-MOSEI-Dataset/models
+E:/kaggle/cc.zh.300.bin
+
+# Jupyter Notebook
+.ipynb_checkpoints/
+
+# VS Code
+.vscode/
+*.code-workspace
+
+# 环境/依赖
+env/
+venv/
+.venv/
+ENV/
+env.bak/
+venv.bak/
+
+# 数据文件
+*.csv
+*.tsv
+*.xls
+*.xlsx
+*.h5
+*.json
+*.pkl
+*.csd
+
+# 日志文件
+*.log
+
+# 系统文件
+.DS_Store
