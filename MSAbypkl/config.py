@@ -77,5 +77,8 @@ EARLY_STOPPING_PATIENCE = 10
 # Gradient clipping threshold to avoid exploding gradients
 GRADIENT_CLIP_VAL = 1.0
 
+# Number of classes for classification task
+NUM_CLASSES = 5 
+
 # Automatically choose the best available device: MPS (Apple Silicon), CUDA (NVIDIA GPU), or CPU
 DEVICE = "mps" if torch.backends.mps.is_available() else "cuda" if torch.cuda.is_available() else "cpu" 

@@ -12,7 +12,7 @@ from tqdm import tqdm
 # Add project root to system path for module resolution
 sys.path.append(str(Path(__file__).resolve().parents[2]))
 
-from src.training.metrics import evaluate_mosei, log_metrics
+from src.training.metrics import evaluate_mosei, log_metrics,evaluate_classification
 from src.utils.logging import setup_logging
 from config import DEVICE, MODELS_DIR, LOGS_DIR
 
@@ -48,12 +48,14 @@ class Trainer:
         device=None,
         model_dir=None,
         log_dir=None,
-        experiment_name=None
+        experiment_name=None,
+        num_classes=5
     ):
         self.model = model
         self.train_loader = train_loader
         self.val_loader = val_loader
         self.test_loader = test_loader
+        self.num_classes = num_classes
         
         # Set device
         self.device = device if device is not None else DEVICE
@@ -65,8 +67,10 @@ class Trainer:
             lr=lr, 
             weight_decay=weight_decay
         )
-        self.criterion = nn.MSELoss()
-        
+#-------------------------------修改回归为分类-----------------------------------------
+        #self.criterion = nn.MSELoss()
+        self.criterion = nn.CrossEntropyLoss()
+
         # Setup paths for saving models and logs
         self.model_dir = Path(model_dir) if model_dir is not None else Path(MODELS_DIR)
         self.model_dir.mkdir(exist_ok=True, parents=True)
@@ -170,24 +174,29 @@ class Trainer:
                 # Update statistics
                 val_loss += loss.item()
                 
+#-------------------------------修改回归为分类----------------
                 # Collect predictions and labels
-                preds = outputs.squeeze().cpu().numpy()
+                #preds = outputs.argmax(dim=1).cpu().numpy()
+                #labels = labels.cpu().numpy()
+
+                preds = torch.argmax(outputs, dim=1).cpu().numpy()
                 labels = labels.cpu().numpy()
-                
+
                 all_preds.append(preds)
                 all_labels.append(labels)
         
         # Calculate average loss
-        avg_loss = val_loss / len(self.val_loader)
+        #avg_loss = val_loss / len(self.val_loader)
         
         # Concatenate batch results
         all_preds = np.concatenate(all_preds)
         all_labels = np.concatenate(all_labels)
-        
+        classification_metrics = evaluate_classification(all_preds, all_labels)
+
         # Evaluate using metrics
         metrics = evaluate_mosei(self.model, self.val_loader, self.device)
         
-        return avg_loss, metrics
+        return classification_metrics, metrics
     
     def test(self):
         """

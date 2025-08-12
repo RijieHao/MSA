@@ -307,3 +307,29 @@ def setup_plotting_directory(experiment_name):
     plot_dir = LOGS_DIR / experiment_name / "plots"
     plot_dir.mkdir(exist_ok=True, parents=True)
     return plot_dir
+def plot_confusion_matrix(y_true, y_pred, labels=None, save_path=None):
+    """
+    Plots the confusion matrix for classification predictions.
+
+    Args:
+        y_true (list or np.ndarray): Ground truth class indices.
+        y_pred (list or np.ndarray): Predicted class indices.
+        labels (list[str], optional): Class labels.
+        save_path (str, optional): Path to save the plot as a file.
+    """
+    # Compute confusion matrix
+    cm = confusion_matrix(y_true, y_pred)
+
+    # Plot confusion matrix
+    plt.figure(figsize=(8, 8))
+    disp = ConfusionMatrixDisplay(confusion_matrix=cm, display_labels=labels)
+    disp.plot(cmap=plt.cm.Blues, values_format="d")
+    plt.title("Confusion Matrix")
+    plt.tight_layout()
+
+    # Save figure if path is provided
+    if save_path:
+        plt.savefig(save_path, dpi=300, bbox_inches="tight")
+        print(f"Confusion matrix saved to {save_path}")
+
+    plt.show()

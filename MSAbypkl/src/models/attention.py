@@ -93,7 +93,8 @@ class MultimodalCrossAttention(nn.Module):
         visual_dim, 
         hidden_dim=256, 
         num_heads=8, 
-        dropout_rate=0.1
+        dropout_rate=0.1,
+        num_classes=5
     ):
         super(MultimodalCrossAttention, self).__init__()
         
@@ -136,7 +137,7 @@ class MultimodalCrossAttention(nn.Module):
         )
         
         # Output projection for sentiment prediction
-        self.output_proj = nn.Linear(hidden_dim, 1)
+        self.output_proj = nn.Linear(hidden_dim, num_classes)
     
     def forward(self, text_features, audio_features, visual_features):
         """

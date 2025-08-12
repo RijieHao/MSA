@@ -1,7 +1,8 @@
 import numpy as np
 import torch
 import torch.nn.functional as F
-from sklearn.metrics import mean_absolute_error, accuracy_score, f1_score
+from sklearn.metrics import mean_absolute_error, accuracy_score, f1_score,classification_report, precision_score, recall_score
+
 from scipy.stats import pearsonr
 import logging
 import csv
@@ -136,20 +137,19 @@ def get_predictions(model, dataloader, device, output_csv_path=None):
                 inputs = {k: v.to(device) for k, v in batch.items() if k != "label"}
                 labels = batch["label"].to(device)
                 ids = batch["id"].to(device)
-                language = batch["language"].to(device)
             else:
                 # Unimodal data
                 inputs, labels, ids, language = batch
                 inputs = inputs.to(device)
                 labels = labels.to(device)
                 ids = ids.to(device)
-                language = language.to(device)
 
             # Forward pass
             outputs = model(inputs)
             
             # Collect predictions and labels
-            preds = outputs.squeeze().cpu().numpy()
+            #preds = outputs.squeeze().cpu().numpy()
+            preds = torch.argmax(outputs, dim=1).cpu().numpy()
             labels = labels.cpu().numpy()
             ids = ids.cpu().numpy()
             
@@ -169,7 +169,7 @@ def get_predictions(model, dataloader, device, output_csv_path=None):
     if output_csv_path:
         with open(output_csv_path, mode="w", newline="") as csvfile:
             writer = csv.writer(csvfile)
-            writer.writerow(["id", "predicted_sentiment", "true_sentiment"])
+            writer.writerow(["id", "predicted_class", "true_class"])
             for id_, pred, label in zip(all_ids, all_preds, all_labels):
                 writer.writerow([id_, pred, label])
         print(f"Results saved to {output_csv_path}")
@@ -191,6 +191,14 @@ def evaluate_mosei(model, dataloader, device):
     all_preds, all_labels = get_predictions(model, dataloader, device)
     
     # Calculate metrics
+
+    accuracy = accuracy_score(all_labels, all_preds)
+    f1 = f1_score(all_labels, all_preds, average="weighted")
+    precision = precision_score(all_labels, all_preds, average="weighted")
+    recall = recall_score(all_labels, all_preds, average="weighted")
+    class_report = classification_report(all_labels, all_preds, output_dict=True)
+    '''
+    下面是回归指标
     mae = calc_mae(all_preds, all_labels)
     corr = calc_correlation(all_preds, all_labels)
     acc = calc_binary_accuracy(all_preds, all_labels)
@@ -207,7 +215,14 @@ def evaluate_mosei(model, dataloader, device):
         "binary_f1": f1,
         **multiclass_metrics
     }
-    
+    '''
+    metrics = {
+        "accuracy": accuracy,
+        "f1": f1,
+        "precision": precision,
+        "recall": recall,
+        "classification_report": class_report
+    }
     return metrics
 
 def log_metrics(metrics, split, epoch=None):
@@ -219,6 +234,7 @@ def log_metrics(metrics, split, epoch=None):
         split (str): Dataset split ('train', 'val', 'test').
         epoch (int, optional): Epoch number (for training logs).
     """
+    """
     epoch_str = f"Epoch {epoch} - " if epoch is not None else ""
     logger.info(f"{epoch_str}{split.capitalize()} metrics:")
     logger.info(f"  MAE: {metrics['mae']:.4f}")
@@ -227,3 +243,22 @@ def log_metrics(metrics, split, epoch=None):
     logger.info(f"  Binary F1: {metrics['binary_f1']:.4f}")
     logger.info(f"  7-class Accuracy: {metrics['multiclass_acc']:.4f}")
     logger.info(f"  7-class F1: {metrics['multiclass_f1']:.4f}")
+    """
+
+    epoch_str = f"Epoch {epoch} - " if epoch is not None else ""
+    logger.info(f"{epoch_str}{split.capitalize()} metrics:")
+    logger.info(f"  Accuracy: {metrics['accuracy']:.4f}")
+    logger.info(f"  F1 Score: {metrics['f1']:.4f}")
+    logger.info(f"  Precision: {metrics['precision']:.4f}")
+    logger.info(f"  Recall: {metrics['recall']:.4f}")
+
+    # Log per-class metrics
+    logger.info("  Classification Report:")
+    for label, report in metrics["classification_report"].items():
+        if isinstance(report, dict):  # Skip 'accuracy' key in classification_report
+            logger.info(f"    Class {label}: Precision={report['precision']:.4f}, Recall={report['recall']:.4f}, F1={report['f1-score']:.4f}")
+
+def evaluate_classification(preds, labels):
+    accuracy = accuracy_score(labels, preds)
+    f1 = f1_score(labels, preds, average="weighted")
+    return {"accuracy": accuracy, "f1": f1}

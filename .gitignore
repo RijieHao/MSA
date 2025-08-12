@@ -11,6 +11,7 @@ MSAbypkl/models/
 video2pkl/unaligned_en.pkl
 video2pkl/unaligned_zh.pkl
 video2pkl/video2pkl/mix_video/
+video2pkl/video2pkl/en_audio/
 # VS Code
 .vscode/
 *.code-workspace

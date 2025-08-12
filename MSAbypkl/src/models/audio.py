@@ -17,7 +17,7 @@ class AudioSentimentModel(nn.Module):
     Forward Output:
         Tensor: Predicted sentiment score of shape (batch_size, 1)
     """
-    def __init__(self, input_dim, hidden_dim=128, dropout_rate=0.3):
+    def __init__(self, input_dim, hidden_dim=128, dropout_rate=0.3,num_classes = 5):
         super(AudioSentimentModel, self).__init__()
         
         # First fully connected layer
@@ -29,7 +29,7 @@ class AudioSentimentModel(nn.Module):
         self.batch_norm2 = nn.BatchNorm1d(hidden_dim // 2)
 
         # Output layer for regression (sentiment score)
-        self.fc3 = nn.Linear(hidden_dim // 2, 1)
+        self.fc3 = nn.Linear(hidden_dim // 2, num_classes)
 
         # Dropout for regularization
         self.dropout = nn.Dropout(dropout_rate)
@@ -80,7 +80,7 @@ class TransformerAudioEncoder(nn.Module):
             - Encoded audio representation (batch_size, hidden_dim)
             - Sentiment score (batch_size, 1)
     """
-    def __init__(self, input_dim, hidden_dim=128, num_layers=2, num_heads=4, dropout_rate=0.3):
+    def __init__(self, input_dim, hidden_dim=128, num_layers=2, num_heads=4, dropout_rate=0.3,num_classes = 5):
         super(TransformerAudioEncoder, self).__init__()
         
         # Input projection
@@ -103,7 +103,7 @@ class TransformerAudioEncoder(nn.Module):
         )
         
         # Output projection
-        self.output_projection = nn.Linear(hidden_dim, 1)
+        self.output_projection = nn.Linear(hidden_dim, num_classes)
         
         # Dropout for regularization
         self.dropout = nn.Dropout(dropout_rate)

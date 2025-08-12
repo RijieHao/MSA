@@ -444,7 +444,7 @@ class MOSEIExtractor:
             "text_dim": TEXT_EMBEDDING_DIM,
             "audio_dim": AUDIO_FEATURE_SIZE,
             "visual_dim": VISUAL_FEATURE_SIZE,
-            "num_classes": 1,
+            "num_classes": 5,
             "train_samples": len(data["train"]["labels"]),
             "val_samples": len(data["valid"]["labels"]),
             "test_samples": len(data["test"]["labels"]),

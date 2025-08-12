@@ -17,13 +17,13 @@ class TextSentimentModel(nn.Module):
     Forward Output:
         Tensor: Predicted sentiment score of shape (batch_size, 1)
     """
-    def __init__(self, input_dim, hidden_dim=256, dropout_rate=0.3):
+    def __init__(self, input_dim, hidden_dim=256, dropout_rate=0.3, num_classes=5):
         super(TextSentimentModel, self).__init__()
         
         # Fully connected layers
         self.fc1 = nn.Linear(input_dim, hidden_dim)
         self.fc2 = nn.Linear(hidden_dim, hidden_dim // 2)
-        self.fc3 = nn.Linear(hidden_dim // 2, 1)
+        self.fc3 = nn.Linear(hidden_dim // 2, num_classes)
         
         # Batch normalization and dropout
         self.dropout = nn.Dropout(dropout_rate)
@@ -76,7 +76,7 @@ class TransformerTextEncoder(nn.Module):
             - Encoded text representation of shape (batch_size, hidden_dim)
             - Sentiment score prediction of shape (batch_size, 1)
     """
-    def __init__(self, input_dim, hidden_dim=256, num_layers=4, num_heads=8, dropout_rate=0.3):
+    def __init__(self, input_dim, hidden_dim=256, num_layers=4, num_heads=8, dropout_rate=0.3,num_classes = 5):
         super(TransformerTextEncoder, self).__init__()
         
         # Project input to transformer hidden dimension
@@ -99,7 +99,7 @@ class TransformerTextEncoder(nn.Module):
         )
         
         # Output projection
-        self.output_projection = nn.Linear(hidden_dim, 1)
+        self.output_projection = nn.Linear(hidden_dim, num_classes)
         
         # Dropout for regularization
         self.dropout = nn.Dropout(dropout_rate)

@@ -20,7 +20,8 @@ class EarlyFusionModel(nn.Module):
         audio_dim, 
         visual_dim, 
         hidden_dim=256, 
-        dropout_rate=0.3
+        dropout_rate=0.3,
+        num_classes=5
     ):
         super(EarlyFusionModel, self).__init__()
         
@@ -37,7 +38,7 @@ class EarlyFusionModel(nn.Module):
             nn.BatchNorm1d(hidden_dim // 2),
             nn.ReLU(),
             nn.Dropout(dropout_rate),
-            nn.Linear(hidden_dim // 2, 1)
+            nn.Linear(hidden_dim // 2, num_classes)
         )
     
     def forward(self, text_features, audio_features, visual_features):
@@ -149,7 +150,8 @@ class TransformerFusionModel(nn.Module):
         hidden_dim=256, 
         num_heads=8, 
         num_layers=4, 
-        dropout_rate=0.3
+        dropout_rate=0.3,
+        num_classes=5   
     ):
         super(TransformerFusionModel, self).__init__()
         
@@ -178,7 +180,7 @@ class TransformerFusionModel(nn.Module):
         )
         
         # Output projection
-        self.output_proj = nn.Linear(hidden_dim, 1)
+        self.output_proj = nn.Linear(hidden_dim, num_classes)
     
     def forward(self, features):
         """

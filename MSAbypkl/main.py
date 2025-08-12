@@ -23,7 +23,7 @@ from src.utils.logging import setup_logging
 from src.data.dataset import get_dataloaders
 from src.models.fusion import TransformerFusionModel
 from src.training.trainer import Trainer
-from src.utils.visualization import plot_training_curves, plot_scatter_predictions
+from src.utils.visualization import plot_training_curves, plot_scatter_predictions,plot_confusion_matrix
 from src.training.metrics import log_metrics, get_predictions
 
 # Add project root to path to enable module imports
@@ -230,11 +230,12 @@ def train_model():
     # Plot prediction scatter plot
     predictions, targets = get_predictions(model=best_model, dataloader=dataloaders["test"], device=device)
     scatter_path = Path(log_dir) / "multimodal_predictions.png"
-    plot_scatter_predictions(
-        predictions, targets,
-        save_path=scatter_path,
-        title="Multimodal Sentiment Test Predictions vs Actual"
-    )
+    plot_confusion_matrix(targets, predictions, labels=["SNEG", "WNEG", "NEUT", "WPOS", "SPOS"], save_path=scatter_path)
+    #plot_scatter_predictions(
+    #    predictions, targets,
+    #    save_path=scatter_path,
+    #    title="Multimodal Sentiment Test Predictions vs Actual"
+    #)
     logger.info(f"Prediction scatter plot saved to {scatter_path}")
     
     logger.info("Training and evaluation completed!")
@@ -341,7 +342,8 @@ def evaluate_model():
 
     # Plot scatter predictions
     scatter_path = Path(log_dir) / "test_predictions.png"
-    plot_scatter_predictions(predictions, targets, save_path=scatter_path, title="Test Predictions vs Actual")
+    plot_confusion_matrix(targets, predictions, labels=["SNEG", "WNEG", "NEUT", "WPOS", "SPOS"], save_path=scatter_path)
+    #plot_scatter_predictions(predictions, targets, save_path=scatter_path, title="Test Predictions vs Actual")
     logger.info(f"Saved prediction scatter plot to {scatter_path}")
     
     logger.info("Evaluation complete!")
