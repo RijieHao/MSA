@@ -45,7 +45,6 @@ class MOSEIExtractor:
         if audio_path.exists():
             return audio_path
         else:
-            print(f"⚠️ 未找到对应的音频文件: {audio_path}")
             return None
 
     #检测语言
@@ -394,20 +393,19 @@ class MOSEIExtractor:
         """处理整个数据集并生成 .pkl 文件"""
         # 加载标签和数据集划分信息
         splits = {"train": [], "valid": [], "test": []}
-        labels = {}
 
         with open(csv_path, "r") as f:
             for line in f.readlines()[1:]:  # 跳过表头
-                video_id, clip_id, label, split = line.strip().split(",")
+                video_id, clip_id, label, split,class_label = line.strip().split(",")
                 video_path = Path(video_dir) / video_id / f"{clip_id}.mp4"
-                splits[split].append((video_path, float(label)))
+                splits[split].append((video_path, float(label), class_label))
 
         # 初始化数据结构
-        data = {split: {"text": [], "language": [], "raw_text": [], "audio": [], "vision": [], "labels": [], "id": []} for split in splits}
+        data = {split: {"text": [], "language": [], "raw_text": [], "audio": [], "vision": [], "labels": [], "id": [], "class_labels": []} for split in splits}
 
         # 提取特征
         for split, items in splits.items():
-            for video_path, label in tqdm(items, desc=f"Processing {split} set"):
+            for video_path, label, class_label in tqdm(items, desc=f"Processing {split} set"):
                 if not video_path.exists():
                     print(f"⚠️ 视频文件不存在: {video_path}")
                     continue
@@ -431,6 +429,7 @@ class MOSEIExtractor:
                 data[split]["vision"].append(visual_features)
                 data[split]["labels"].append(label)
                 data[split]["id"].append(unique_id)  # 使用唯一 ID
+                data[split]["class_labels"].append(class_label)  # 添加类标签
 
 
         # 保存 .pkl 文件

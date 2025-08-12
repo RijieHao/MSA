@@ -35,6 +35,13 @@ class MOSEIDataset(Dataset):
     def __init__(self, split="train", modalities=None):
         self.split = split
         self.modalities = modalities or ["text", "audio", "vision"]
+        self.label_mapping = {
+            "SNEG": 0,
+            "WNEG": 1,
+            "NEUT": 2,
+            "WPOS": 3,
+            "SPOS": 4
+        }
 
         # Validate provided modalities
         for modality in self.modalities:
@@ -68,10 +75,10 @@ class MOSEIDataset(Dataset):
             }
         
         # Check if required fields are present
-        required_fields = ["labels", "id", "language"]
-        for field in required_fields:
+        optional_fields = ["labels", "id", "language","class_labels"]
+        for field in optional_fields:
             if field not in self.data:
-                raise ValueError(f"Field '{field}' not found in data file: {self.data_path}")
+                logger.warning(f"Optional field '{field}' not found in data file: {self.data_path}")
 
         self.num_samples = len(self.data["labels"])
         logger.info(f"Loaded {self.num_samples} samples for {split} split")
@@ -103,14 +110,29 @@ class MOSEIDataset(Dataset):
                 dim = self.metadata.get(f"{modality}_dim", 0)
                 sample[modality] = torch.zeros(dim, dtype=torch.float32)
         
+
+        if "class_labels" in self.data:
+            label_idx = self.label_mapping.get(self.data["class_labels"][idx], -1)
+            if label_idx == -1:
+                logger.warning(f"Unknown class label '{self.data['class_labels'][idx]}' for sample {idx}")
+                onehot = torch.zeros(len(self.label_mapping), dtype=torch.float32)
+                sample["onehot"] = onehot
+            else:
+                onehot = torch.zeros(len(self.label_mapping), dtype=torch.float32)
+                onehot[label_idx] = 1.0
+                sample["onehot"] = onehot
+
         # Load label
-        sample["label"] = torch.tensor(self.data["labels"][idx], dtype=torch.float32)
+        if "labels" in self.data:
+            sample["label"] = torch.tensor(self.data["labels"][idx], dtype=torch.float32)
 
         # Load ID
-        sample["id"] = self.data["id"][idx]
+        if "id" in self.data:
+            sample["id"] = self.data["id"][idx]
 
         # Load language
-        sample["language"] = self.data["language"][idx]
+        if "language" in self.data:
+            sample["language"] = self.data["language"][idx]
 
         return sample
 
@@ -125,6 +147,13 @@ class MOSEIUnimodalDataset(Dataset):
     def __init__(self, split="train", modality="text"):
         self.split = split
         self.modality = modality
+        self.label_mapping = {
+            "SNEG": 0,
+            "WNEG": 1,
+            "NEUT": 2,
+            "WPOS": 3,
+            "SPOS": 4
+        }
         
         # Validate modality
         if modality not in ["text", "audio", "vision"]:
@@ -143,9 +172,15 @@ class MOSEIUnimodalDataset(Dataset):
         
         # Check that the modality, labels, id, and language exist
         required_fields = [modality, "labels", "id", "language"]
+        optional_fields = ["class_labels"]
+
         for field in required_fields:
             if field not in self.data:
                 raise ValueError(f"Field '{field}' not found in data file: {self.data_path}")
+
+        for field in optional_fields:
+            if field not in self.data:
+                logger.warning(f"Optional field '{field}' not found in data file: {self.data_path}")
 
         self.num_samples = len(self.data["labels"])
         logger.info(f"Loaded {self.num_samples} samples for {split} split, modality: {modality}")
@@ -158,12 +193,12 @@ class MOSEIUnimodalDataset(Dataset):
     
     def __getitem__(self, idx):
         """
-        Retrieve a unimodal feature, label, ID, and language.
+        Retrieve a unimodal feature, label, ID, language, and onehot.
 
         Args:
             idx (int): Sample index.
         Returns:
-            dict: Dictionary with the feature tensor, label tensor, ID, and language.
+            dict: Dictionary with the feature tensor, label tensor, ID, language, and onehot.
         """
         sample = {
             "feature": torch.tensor(self.data[self.modality][idx], dtype=torch.float32),
@@ -171,6 +206,29 @@ class MOSEIUnimodalDataset(Dataset):
             "id": self.data["id"][idx],
             "language": self.data["language"][idx]
         }
+
+        # Load class_labels and create one-hot encoding
+        if "class_labels" in self.data:
+            class_label = self.data["class_labels"][idx]
+            if isinstance(class_label, str):
+                # Convert string label to index
+                label_idx = self.label_mapping.get(class_label, -1)
+                if label_idx == -1:
+                    logger.warning(f"Unknown class label '{class_label}' for sample {idx}")
+                    onehot = torch.zeros(len(self.label_mapping), dtype=torch.float32)
+                else:
+                    onehot = torch.zeros(len(self.label_mapping), dtype=torch.float32)
+                    onehot[label_idx] = 1.0
+            else:
+                # Handle integer-based class_labels (if applicable)
+                num_classes = max(self.data["class_labels"]) + 1  # Assuming class labels are 0-indexed
+                onehot = torch.zeros(num_classes, dtype=torch.float32)
+                onehot[class_label] = 1.0
+        else:
+            logger.warning(f"class_labels not found for sample {idx}")
+            onehot = torch.zeros(len(self.label_mapping), dtype=torch.float32)  # Empty tensor if class_labels is missing
+
+        sample["onehot"] = onehot
         
         return sample
 
