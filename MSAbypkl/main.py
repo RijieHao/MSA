@@ -19,8 +19,6 @@ from config import (
 )
 
 # Import necessary modules
-from src.data.download import install_mmsdk, download_mosei
-from src.data.preprocess import MOSEIPreprocessor
 from src.utils.logging import setup_logging
 from src.data.dataset import get_dataloaders
 from src.models.fusion import TransformerFusionModel
@@ -43,134 +41,17 @@ def print_menu():
     Display the main menu options for the console application.
 
     Shows the available actions the user can perform:
-    - Dataset download/preprocessing
     - Model training
     - Model evaluation
     - Results visualization
     - Application exit
     """
     print("\n===== Multimodal Sentiment Analysis Console =====")
-    print("1. Download and preprocess dataset")
-    print("2. Train a new model")
-    print("3. Evaluate a trained model")
-    print("4. Visualize training results")
-    print("5. Exit")
+    print("1. Train a new model")
+    print("2. Evaluate a trained model")
+    print("3. Visualize training results")
+    print("4. Exit")
     print("=================================================")
-
-def download_and_preprocess():
-    """
-    Handle dataset download and preprocessing workflow.
-
-    This function:
-    1. Checks/creates necessary directories
-    2. Installs required SDK (CMU-MultimodalSDK)
-    3. Downloads the MOSEI dataset
-    4. Preprocesses the raw data into a usable format
-    5. Saves processed data to disk
-
-    Logs progress and errors throughout the process.
-    """
-    logger.info("Starting dataset download and preprocessing...\n")
-
-    # 添加用户选择
-    skip_download = input("Skip download? (y/n, default: n): ").strip().lower()
-    
-    if skip_download != 'y':
-        # 原有的下载逻辑
-        if not RAW_DATA_DIR:
-            logger.error("Raw data directory is not defined in config.py.")
-            return
-        else:
-            logger.info(f"Raw data directory: {RAW_DATA_DIR}")
-
-        # Create data directory if it doesn"t exist
-        RAW_DATA_DIR.mkdir(exist_ok=True, parents=True)
-        logger.info("Created raw data directory.")
-
-        # Install CMU-MultimodalSDK if not already installed
-        install_mmsdk()
-        logger.info("CMU-MultimodalSDK installed successfully.")
-
-        # Download the dataset
-        logger.info("Downloading MOSEI dataset...")
-
-        # Check if the dataset URL and name are defined
-        if not DATASET_URL:
-            logger.error("Dataset URL is not defined in config.py.")
-            return
-        else:
-            logger.info(f"Dataset URL: {DATASET_URL}")
-        if not DATASET_NAME:
-            logger.error("Dataset name is not defined in config.py.")
-            return
-        else:
-            logger.info(f"Dataset name: {DATASET_NAME}")
-
-        # Attempt dataset download
-        success = download_mosei(RAW_DATA_DIR, DATASET_NAME, DATASET_URL)
-
-        if success:
-            logger.info("Dataset download completed successfully.")
-        else:
-            logger.error("Failed to download dataset.")
-            return
-    else:
-        logger.info("Skipping download, proceeding to preprocessing...")
-        
-        # 检查文件是否存在
-        required_files = [
-            "CMU_MOSEI_TimestampedWords.csd",
-            "CMU_MOSEI_COVAREP.csd", 
-            "CMU_MOSEI_VisualFacet42.csd",
-            "CMU_MOSEI_Labels.csd"
-        ]
-        
-        dataset_dir = RAW_DATA_DIR / DATASET_NAME
-        for file_name in required_files:
-            file_path = dataset_dir / file_name
-            if not file_path.exists():
-                logger.error(f"Required file not found: {file_path}")
-                logger.error("Please ensure all .csd files are in the correct directory")
-                return
-        
-        logger.info("All required files found, proceeding with preprocessing...")
-
-    # 预处理逻辑保持不变
-    logger.info("Preprocessing the dataset...")
-
-    # Check if the dataset directory exists
-    if not PROCESSED_DATA_DIR:
-        logger.error("Processed data directory is not defined in config.py.")
-        return
-    else:
-        logger.info(f"Processed data directory: {PROCESSED_DATA_DIR}")
-
-    # Create directories if they don"t exist
-    PROCESSED_DATA_DIR.mkdir(exist_ok=True, parents=True)
-    logger.info("Created processed data directory.")
-
-    # Check if processed data already exists
-    processed_dir = PROCESSED_DATA_DIR / DATASET_NAME
-    if processed_dir.exists():
-        if all((processed_dir / f"{split}_data.pkl").exists() for split in ["train", "val", "test"]):
-            overwrite = input("Processed data already exists. Overwrite? (y/n, default: n): ").strip().lower()
-            if overwrite != 'y':
-                logger.info("Skipping preprocessing.")
-                return
-    
-    # Initialize the preprocessor
-    preprocessor = MOSEIPreprocessor(RAW_DATA_DIR, PROCESSED_DATA_DIR)
-    logger.info("Initialized MOSEIPreprocessor.")
-    
-    # Process the dataset
-    success = preprocessor.process_dataset()
-    if success:
-        # Save the processed data
-        preprocessor.save_processed_data()
-        logger.info("Preprocessing completed successfully.")
-    else:
-        logger.error("Failed to preprocess dataset.")
-        return
 
 def train_model():
     """
@@ -496,7 +377,6 @@ def main():
     Main entry point for the console application.
     
     Implements an interactive menu system that allows users to:
-    - Download and preprocess data
     - Train models
     - Evaluate models
     - Visualize results
@@ -506,17 +386,15 @@ def main():
     """
     while True:
         print_menu()
-        choice = input("Enter your choice (1-5): ").strip()
+        choice = input("Enter your choice (1-4): ").strip()
 
         if choice == "1":
-            download_and_preprocess()
-        elif choice == "2":
             train_model()
-        elif choice == "3":
+        elif choice == "2":
             evaluate_model()
-        elif choice == "4":
+        elif choice == "3":
             visualize_results()
-        elif choice == "5":
+        elif choice == "4":
             logger.info("Exiting the console. Goodbye!")
             break
         else:

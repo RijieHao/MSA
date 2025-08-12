@@ -17,11 +17,11 @@ from skimage.feature import hog
 # 配置参数
 TEXT_EMBEDDING_DIM = 768
 AUDIO_FEATURE_SIZE = 40
-VISUAL_FEATURE_SIZE = 35
+VISUAL_FEATURE_SIZE = 46
 SEED = 42
 
 class MOSEIExtractor:
-    def __init__(self, language="en"):
+    def __init__(self, language="unknown"):
         self.language = language
         self.device = "cuda" if torch.cuda.is_available() else "cpu"
 
@@ -38,18 +38,45 @@ class MOSEIExtractor:
             static_image_mode=False, max_num_faces=1, refine_landmarks=True, min_detection_confidence=0.5
         )
 
+    def find_audio_file(self, video_path, audio_dir):
+        """根据视频文件名在音频文件夹中查找对应的音频文件"""
+        video_name = Path(video_path).stem  # 获取视频文件名（不带扩展名）
+        audio_path = Path(audio_dir) / f"{video_name}.wav"  # 假设音频文件是 .wav 格式
+        if audio_path.exists():
+            return audio_path
+        else:
+            print(f"⚠️ 未找到对应的音频文件: {audio_path}")
+            return None
+
+    #检测语言
+    def detect_language(self, audio_path):
+        """使用 Whisper 模型检测音频语言"""
+        result = self.whisper_model.transcribe(audio_path, task="lang")
+        detected_language = result["language"]
+        print(f"Detected language: {detected_language}")
+        return detected_language
+
 
 #-------------------------------------文本特征提取------------------------------------------------------
-    def extract_text_features(self, video_path):
-        """从视频中提取文本特征并生成 BERT 嵌入"""
-        # 提取音频
-        video = VideoFileClip(video_path)
-        temp_audio = "temp_audio.wav"
-        video.audio.write_audiofile(temp_audio, logger=None)
+    def extract_text_features(self, video_path, audio_path=None):
+        """从视频或音频中提取文本特征并生成 BERT 嵌入"""
+        # 如果提供了音频路径，则直接使用音频文件
+        if audio_path:
+            temp_audio = audio_path
+        else:
+            # 从视频中提取音频
+            video = VideoFileClip(video_path)
+            temp_audio = "temp_audio.wav"
+            video.audio.write_audiofile(temp_audio, logger=None)
+
+        # 如果语言未知，先检测语言
+        if self.language == "unknown":
+            self.language = self.detect_language(temp_audio)
 
         # 使用 Whisper 提取文本
-        result = self.whisper_model.transcribe(temp_audio, language="en", word_timestamps=True)
-        os.remove(temp_audio)
+        result = self.whisper_model.transcribe(temp_audio, language=self.language, word_timestamps=True)
+        if not audio_path:  # 如果是临时音频文件，删除它
+            os.remove(temp_audio)
 
         # 拼接文本
         words = [word["word"] for segment in result["segments"] for word in segment["words"]]
@@ -62,18 +89,23 @@ class MOSEIExtractor:
             outputs = self.bert_model(**inputs)
             embedding = outputs.last_hidden_state[:, 0, :].cpu().numpy()
 
-        return embedding[0]  # 返回 1D 向量
-    
+        return self.language, text_str, embedding[0]  # 返回 1D 向量
 
 #-------------------------------------音频特征提取------------------------------------------------------
-    def extract_audio_features(self, video_path):
-        """从视频中提取音频特征并生成高级特征"""
-        video = VideoFileClip(video_path)
-        temp_audio = "temp_audio.wav"
-        video.audio.write_audiofile(temp_audio, logger=None)
+    def extract_audio_features(self, video_path, audio_path=None):
+        """从视频或音频中提取音频特征并生成高级特征"""
+        # 如果提供了音频路径，则直接使用音频文件
+        if audio_path:
+            temp_audio = audio_path
+        else:
+            # 从视频中提取音频
+            video = VideoFileClip(video_path)
+            temp_audio = "temp_audio.wav"
+            video.audio.write_audiofile(temp_audio, logger=None)
 
         y, sr = librosa.load(temp_audio, sr=22050)
-        os.remove(temp_audio)
+        if not audio_path:  # 如果是临时音频文件，删除它
+            os.remove(temp_audio)
 
         # 提取音频帧特征
         hop_length = max(1, len(y) // int(video.duration * video.fps))
@@ -258,18 +290,18 @@ class MOSEIExtractor:
         
 
         # 眼部注视方向 4 维
-        #left_eye_center = np.mean([[landmarks.landmark[i].x, landmarks.landmark[i].y] 
-        #                          for i in [33, 133]], axis=0)
-        #right_eye_center = np.mean([[landmarks.landmark[i].x, landmarks.landmark[i].y] 
-        #                           for i in [362, 263]], axis=0)
+        left_eye_center = np.mean([[landmarks.landmark[i].x, landmarks.landmark[i].y] 
+                                  for i in [33, 133]], axis=0)
+        right_eye_center = np.mean([[landmarks.landmark[i].x, landmarks.landmark[i].y] 
+                                   for i in [362, 263]], axis=0)
         # 计算注视方向
-        #left_gaze_x = (left_eye_center[0] - 0.3) * 2
-        #left_gaze_y = (left_eye_center[1] - 0.4) * 2
-        #right_gaze_x = (right_eye_center[0] - 0.7) * 2
-        #right_gaze_y = (right_eye_center[1] - 0.4) * 2
-        #features.extend([left_gaze_x, left_gaze_y, right_gaze_x, right_gaze_y])
+        left_gaze_x = (left_eye_center[0] - 0.3) * 2
+        left_gaze_y = (left_eye_center[1] - 0.4) * 2
+        right_gaze_x = (right_eye_center[0] - 0.7) * 2
+        right_gaze_y = (right_eye_center[1] - 0.4) * 2
+        features.extend([left_gaze_x, left_gaze_y, right_gaze_x, right_gaze_y])
 
-        # FACS 动作单元
+        # FACS 动作单元# 简化为 10 维
         aus = []
         # AU1 - 内眉上抬
         au1 = max(0, 0.5 - landmarks.landmark[55].y) * 10
@@ -305,7 +337,51 @@ class MOSEIExtractor:
         mouth_width = abs(landmarks.landmark[61].x - landmarks.landmark[291].x)
         au20 = mouth_width * 100
         aus.append(au20)
-        features.extend(aus)  # 简化为 5 维
+        # AU25 - 嘴唇分离
+        mouth_open = abs(landmarks.landmark[13].y - landmarks.landmark[14].y)
+        au25 = mouth_open * 100
+        aus.append(au25)
+        features.extend(aus) 
+
+
+        #脸部情感特征 6维
+        emotions = []
+        # Happiness - 基于嘴角上扬
+        left_corner = landmarks.landmark[61].y
+        right_corner = landmarks.landmark[84].y
+        mouth_center = landmarks.landmark[13].y
+        corner_avg = (left_corner + right_corner) / 2
+        mouth_corner_lift = mouth_center - corner_avg
+        happiness = max(0, mouth_corner_lift) * 5
+        emotions.append(happiness)
+        
+        # Sadness - 基于嘴角下拉和眉毛下垂
+        mouth_corner_drop = -min(0, mouth_corner_lift)
+        brow_drop = max(0, 0.45 - landmarks.landmark[55].y)
+        sadness = (mouth_corner_drop + brow_drop) * 3
+        emotions.append(sadness)
+        
+        # Anger - 基于眉毛紧锁
+        brow_furrow = max(0, 0.1 - abs(landmarks.landmark[55].x - landmarks.landmark[70].x))
+        anger = brow_furrow * 20
+        emotions.append(anger)
+        
+        # Disgust - 基于鼻子皱起
+        nose_scrunch = abs(landmarks.landmark[125].x - landmarks.landmark[141].x)
+        disgust = max(0, nose_scrunch - 0.02) * 50
+        emotions.append(disgust)
+        
+        # Surprise - 基于眉毛上抬和嘴巴张开
+        brow_raise = max(0, 0.4 - landmarks.landmark[70].y)
+        mouth_open = abs(landmarks.landmark[13].y - landmarks.landmark[14].y)
+        surprise = (brow_raise + mouth_open) * 10
+        emotions.append(surprise)
+        
+        # Fear - 基于眼睛张大和眉毛上抬
+        eye_wide = abs(landmarks.landmark[33].y - landmarks.landmark[145].y)
+        fear = (eye_wide + brow_raise) * 8
+        emotions.append(fear) 
+        features.extend(emotions) 
 
         features = features[:VISUAL_FEATURE_SIZE]
         while len(features) < VISUAL_FEATURE_SIZE:
@@ -314,7 +390,7 @@ class MOSEIExtractor:
 
 
 #-------------------------------------生成pkl文件------------------------------------------------------
-    def process_dataset(self, video_dir, csv_path, output_dir):
+    def process_dataset(self, video_dir, csv_path, output_dir, audio_dir=None):
         """处理整个数据集并生成 .pkl 文件"""
         # 加载标签和数据集划分信息
         splits = {"train": [], "valid": [], "test": []}
@@ -327,7 +403,7 @@ class MOSEIExtractor:
                 splits[split].append((video_path, float(label)))
 
         # 初始化数据结构
-        data = {split: {"language": [], "acoustic": [], "visual": [], "labels": []} for split in splits}
+        data = {split: {"text": [], "language": [], "raw_text": [], "audio": [], "vision": [], "labels": [], "id": []} for split in splits}
 
         # 提取特征
         for split, items in splits.items():
@@ -336,16 +412,26 @@ class MOSEIExtractor:
                     print(f"⚠️ 视频文件不存在: {video_path}")
                     continue
 
+                # 查找对应的音频文件
+                audio_path = None
+                if audio_dir:
+                    audio_path = self.find_audio_file(video_path, audio_dir)
+
                 # 提取特征
-                text_features = self.extract_text_features(video_path)
-                audio_features = self.extract_audio_features(video_path)
+                language, raw_text, text_features = self.extract_text_features(video_path, audio_path)
+                audio_features = self.extract_audio_features(video_path, audio_path)
                 visual_features = self.extract_visual_features(video_path)
+                unique_id = f"{video_path.parent.name}_{video_path.stem}"
 
                 # 保存特征
-                data[split]["language"].append(text_features)
-                data[split]["acoustic"].append(audio_features)
-                data[split]["visual"].append(visual_features)
+                data[split]["text"].append(text_features)
+                data[split]["language"].append(language)
+                data[split]["raw_text"].append(raw_text)
+                data[split]["audio"].append(audio_features)
+                data[split]["vision"].append(visual_features)
                 data[split]["labels"].append(label)
+                data[split]["id"].append(unique_id)  # 使用唯一 ID
+
 
         # 保存 .pkl 文件
         output_dir = Path(output_dir)
@@ -372,7 +458,8 @@ class MOSEIExtractor:
 if __name__ == "__main__":
     processor = MOSEIExtractor(language="zh")
     processor.process_dataset(
-        video_dir="our_MSA/selected_video",
-        csv_path="our_MSA/selected_meta.csv",
-        output_dir="our_MSA/test_pkl"
+        video_dir="video2pkl/video2pkl/ch_video",
+        csv_path="video2pkl/video2pkl/ch_video.csv",
+        output_dir="E:/kaggle/MSAbypkl/data_pkl/ch_pkl",
+        audio_dir=None
     )

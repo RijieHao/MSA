@@ -26,7 +26,7 @@ logger = logging.getLogger(__name__)
 class MOSEIDataset(Dataset):
     """
     A PyTorch Dataset class for the CMU-MOSEI dataset that supports
-    loading data with multiple modalities (language, acoustic, visual).
+    loading data with multiple modalities (text, audio, vision) and IDs.
 
     Args:
         split (str): Dataset split to use ("train", "val", or "test").
@@ -34,13 +34,13 @@ class MOSEIDataset(Dataset):
     """
     def __init__(self, split="train", modalities=None):
         self.split = split
-        self.modalities = modalities or ["language", "acoustic", "visual"]
-        
+        self.modalities = modalities or ["text", "audio", "vision"]
+
         # Validate provided modalities
         for modality in self.modalities:
-            if modality not in ["language", "acoustic", "visual"]:
+            if modality not in ["text", "audio", "vision"]:
                 raise ValueError(f"Invalid modality: {modality}")
-        
+
         # Construct path to dataset split
         self.data_path = PROCESSED_DATA_DIR / DATASET_NAME / f"{split}_data.pkl"
         if not self.data_path.exists():
@@ -48,7 +48,7 @@ class MOSEIDataset(Dataset):
                 f"Data file not found: {self.data_path}. "
                 f"Run preprocessing script first."
             )
-        
+
         # Load the data for the split
         with open(self.data_path, "rb") as f:
             self.data = pickle.load(f)
@@ -67,31 +67,32 @@ class MOSEIDataset(Dataset):
                 "visual_dim": VISUAL_FEATURE_SIZE
             }
         
-        # Check if labels are present
-        if "labels" not in self.data:
-            raise ValueError(f"Labels not found in data file: {self.data_path}")
-        
-        # Get total number of samples in the dataset
+        # Check if required fields are present
+        required_fields = ["labels", "id", "language"]
+        for field in required_fields:
+            if field not in self.data:
+                raise ValueError(f"Field '{field}' not found in data file: {self.data_path}")
+
         self.num_samples = len(self.data["labels"])
         logger.info(f"Loaded {self.num_samples} samples for {split} split")
-    
+
     def __len__(self):
         """
         Return the total number of samples.
         """
         return self.num_samples
-    
+
     def __getitem__(self, idx):
         """
-        Retrieve a sample (features + label) by index.
+        Retrieve a sample (features + label + ID + language) by index.
 
         Args:
             idx (int): Sample index.
         Returns:
-            dict: Dictionary with modality tensors and the label tensor.
+            dict: Dictionary with modality tensors, the label tensor, ID, and language.
         """
         sample = {}
-        
+
         # Load each modality if available; otherwise, create a zero tensor
         for modality in self.modalities:
             if modality in self.data:
@@ -104,7 +105,13 @@ class MOSEIDataset(Dataset):
         
         # Load label
         sample["label"] = torch.tensor(self.data["labels"][idx], dtype=torch.float32)
-        
+
+        # Load ID
+        sample["id"] = self.data["id"][idx]
+
+        # Load language
+        sample["language"] = self.data["language"][idx]
+
         return sample
 
 class MOSEIUnimodalDataset(Dataset):
@@ -113,14 +120,14 @@ class MOSEIUnimodalDataset(Dataset):
 
     Args:
         split (str): Dataset split to use ("train", "val", or "test").
-        modality (str): One of "language", "acoustic", or "visual".
+        modality (str): One of "text", "audio", or "vision".
     """
     def __init__(self, split="train", modality="text"):
         self.split = split
         self.modality = modality
         
         # Validate modality
-        if modality not in ["language", "acoustic", "visual"]:
+        if modality not in ["text", "audio", "vision"]:
             raise ValueError(f"Invalid modality: {modality}")
         
         # Load dataset for the split
@@ -134,11 +141,11 @@ class MOSEIUnimodalDataset(Dataset):
         with open(self.data_path, "rb") as f:
             self.data = pickle.load(f)
         
-        # Check that both the modality and labels exist
-        if modality not in self.data:
-            raise ValueError(f"Modality {modality} not found in data file: {self.data_path}")
-        if "labels" not in self.data:
-            raise ValueError(f"Labels not found in data file: {self.data_path}")
+        # Check that the modality, labels, id, and language exist
+        required_fields = [modality, "labels", "id", "language"]
+        for field in required_fields:
+            if field not in self.data:
+                raise ValueError(f"Field '{field}' not found in data file: {self.data_path}")
 
         self.num_samples = len(self.data["labels"])
         logger.info(f"Loaded {self.num_samples} samples for {split} split, modality: {modality}")
@@ -151,17 +158,21 @@ class MOSEIUnimodalDataset(Dataset):
     
     def __getitem__(self, idx):
         """
-        Retrieve a unimodal feature and label pair.
+        Retrieve a unimodal feature, label, ID, and language.
 
         Args:
             idx (int): Sample index.
         Returns:
-            tuple: (features, label) as tensors.
+            dict: Dictionary with the feature tensor, label tensor, ID, and language.
         """
-        features = torch.tensor(self.data[self.modality][idx], dtype=torch.float32)
-        label = torch.tensor(self.data["labels"][idx], dtype=torch.float32)
+        sample = {
+            "feature": torch.tensor(self.data[self.modality][idx], dtype=torch.float32),
+            "label": torch.tensor(self.data["labels"][idx], dtype=torch.float32),
+            "id": self.data["id"][idx],
+            "language": self.data["language"][idx]
+        }
         
-        return features, label
+        return sample
 
 def get_dataloaders(modalities=None, batch_size=BATCH_SIZE, num_workers=2):
     """

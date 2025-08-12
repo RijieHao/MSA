@@ -4,6 +4,7 @@ import torch.nn.functional as F
 from sklearn.metrics import mean_absolute_error, accuracy_score, f1_score
 from scipy.stats import pearsonr
 import logging
+import csv
 
 logger = logging.getLogger(__name__)
 
@@ -108,23 +109,25 @@ def calc_multiclass_metrics(preds, labels):
         "multiclass_f1": f1
     }
 
-def get_predictions(model, dataloader, device):
+def get_predictions(model, dataloader, device, output_csv_path=None):
     """
-    Run inference on the provided dataloader and collect predictions and labels.
-    
+    Run inference on the provided dataloader and collect predictions, labels, and IDs.
+    Optionally save results to a CSV file.
+
     Args:
         model (torch.nn.Module): Trained model for inference.
         dataloader (torch.utils.data.DataLoader): Dataloader to evaluate.
         device (str): Device to perform inference on ('cuda', 'cpu', etc.).
-    
+        output_csv_path (str, optional): Path to save the predictions as a CSV file.
+
     Returns:
-        tuple: (np.ndarray of predictions, np.ndarray of labels)
+        tuple: (np.ndarray of predictions, np.ndarray of labels, list of IDs)
     """
     model.eval()
     all_preds = []
     all_labels = []
-    results = []
-    
+    all_ids = []
+
     with torch.no_grad():
         for batch in dataloader:
             # Get batch data
@@ -132,18 +135,24 @@ def get_predictions(model, dataloader, device):
                 # Multimodal data
                 inputs = {k: v.to(device) for k, v in batch.items() if k != "label"}
                 labels = batch["label"].to(device)
+                ids = batch["id"].to(device)
+                language = batch["language"].to(device)
             else:
                 # Unimodal data
-                inputs, labels = batch
+                inputs, labels, ids, language = batch
                 inputs = inputs.to(device)
                 labels = labels.to(device)
-            
+                ids = ids.to(device)
+                language = language.to(device)
+
             # Forward pass
             outputs = model(inputs)
             
             # Collect predictions and labels
             preds = outputs.squeeze().cpu().numpy()
             labels = labels.cpu().numpy()
+            ids = ids.cpu().numpy()
+            
             
             # 添加 NaN 处理
             preds = np.where(np.isnan(preds), 0.0, preds)  # 将 NaN 替换为 0
@@ -151,10 +160,19 @@ def get_predictions(model, dataloader, device):
             
             all_preds.append(preds)
             all_labels.append(labels)
+            all_ids.append(ids)
     
     # Concatenate batch results
     all_preds = np.concatenate(all_preds)
     all_labels = np.concatenate(all_labels)
+
+    if output_csv_path:
+        with open(output_csv_path, mode="w", newline="") as csvfile:
+            writer = csv.writer(csvfile)
+            writer.writerow(["id", "predicted_sentiment", "true_sentiment"])
+            for id_, pred, label in zip(all_ids, all_preds, all_labels):
+                writer.writerow([id_, pred, label])
+        print(f"Results saved to {output_csv_path}")
 
     return all_preds, all_labels
 
