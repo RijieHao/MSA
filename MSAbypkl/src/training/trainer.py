@@ -107,7 +107,7 @@ class Trainer:
             # Get batch data
             if isinstance(batch, dict):
                 # Multimodal data
-                inputs = {k: v.to(self.device) for k, v in batch.items() if k != "label"}
+                inputs = {k: v.to(self.device) for k, v in batch.items() if k in ["text", "audio", "vision"]}
                 labels = batch["label"].to(self.device)
             else:
                 # Unimodal data
@@ -122,7 +122,7 @@ class Trainer:
             outputs = self.model(inputs)
             
             # Calculate loss
-            loss = self.criterion(outputs.squeeze(), labels)
+            loss = self.criterion(outputs.squeeze(), labels.squeeze())
             
             # Backward pass and optimize
             loss.backward()
@@ -157,7 +157,7 @@ class Trainer:
                 # Get batch data
                 if isinstance(batch, dict):
                     # Multimodal data
-                    inputs = {k: v.to(self.device) for k, v in batch.items() if k != "label"}
+                    inputs = {k: v.to(self.device) for k, v in batch.items() if k in ["text", "audio", "vision"]}
                     labels = batch["label"].to(self.device)
                 else:
                     # Unimodal data
@@ -169,7 +169,7 @@ class Trainer:
                 outputs = self.model(inputs)
                 
                 # Calculate loss
-                loss = self.criterion(outputs.squeeze(), labels)
+                loss = self.criterion(outputs.squeeze(), labels.squeeze())
                 
                 # Update statistics
                 val_loss += loss.item()

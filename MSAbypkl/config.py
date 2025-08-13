@@ -13,7 +13,7 @@ ROOT_DIR = Path(os.path.dirname(os.path.abspath(__file__)))
 # Data directories
 DATA_DIR = ROOT_DIR / "data"
 RAW_DATA_DIR = DATA_DIR / "raw"  # Raw dataset files
-PROCESSED_DATA_DIR = DATA_DIR / "processed"  # Processed dataset files
+PROCESSED_DATA_DIR = DATA_DIR / "data_pkl"  # Processed dataset files
 
 # Source code directories
 SRC_DIR = ROOT_DIR / "src"
@@ -26,12 +26,12 @@ MODELS_DIR = ROOT_DIR / "models"  # Saved model checkpoints
 LOGS_DIR = ROOT_DIR / "logs"  # Training and evaluation logs
 
 # Automatically create required directories if they do not exist
-for directory in [DATA_DIR, RAW_DATA_DIR, SRC_DIR, DATA_SRC_DIR, PROCESSED_DATA_DIR,
+for directory in [ SRC_DIR, DATA_SRC_DIR, PROCESSED_DATA_DIR,
                   MODELS_SRC_DIR, UTILS_SRC_DIR, LOGS_DIR, MODELS_DIR]:
     directory.mkdir(exist_ok=True, parents=True)
 
 # Dataset identifier
-DATASET_NAME = "CMU_MOSEI"
+DATASET_NAME = "mix_pkl"
 
 # URL for downloading the CMU-MOSEI dataset
 DATASET_URL = "http://immortal.multicomp.cs.cmu.edu/CMU-MOSEI/"
@@ -41,7 +41,7 @@ TEXT_MAX_LENGTH = 128
 
 # Feature dimensions for each modality
 AUDIO_FEATURE_SIZE = 40      # Number of MFCC features per audio frame
-VISUAL_FEATURE_SIZE = 35     # Number of facial landmark points or visual features
+VISUAL_FEATURE_SIZE = 46     # Number of facial landmark points or visual features
 
 # Dimensionality of the BERT-based text embeddings
 TEXT_EMBEDDING_DIM = 768

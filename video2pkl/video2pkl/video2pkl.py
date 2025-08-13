@@ -6,6 +6,7 @@ from tqdm import tqdm
 from sklearn.model_selection import train_test_split
 from transformers import BertTokenizer, BertModel
 from moviepy.video.io.VideoFileClip import VideoFileClip
+#from moviepy import VideoFileClip
 import whisper
 import librosa
 import cv2
@@ -60,11 +61,11 @@ class MOSEIExtractor:
     def extract_text_features(self, video_path, audio_path=None):
         """从视频或音频中提取文本特征并生成 BERT 嵌入"""
         # 如果提供了音频路径，则直接使用音频文件
+        video = VideoFileClip(video_path)
         if audio_path:
             temp_audio = audio_path
         else:
             # 从视频中提取音频
-            video = VideoFileClip(video_path)
             temp_audio = "temp_audio.wav"
             video.audio.write_audiofile(temp_audio, logger=None)
 
@@ -73,7 +74,7 @@ class MOSEIExtractor:
             self.language = self.detect_language(temp_audio)
 
         # 使用 Whisper 提取文本
-        result = self.whisper_model.transcribe(temp_audio, language=self.language, word_timestamps=True)
+        result = self.whisper_model.transcribe(str(temp_audio), language=self.language, word_timestamps=True)
         if not audio_path:  # 如果是临时音频文件，删除它
             os.remove(temp_audio)
 
@@ -94,11 +95,11 @@ class MOSEIExtractor:
     def extract_audio_features(self, video_path, audio_path=None):
         """从视频或音频中提取音频特征并生成高级特征"""
         # 如果提供了音频路径，则直接使用音频文件
+        video = VideoFileClip(video_path)
         if audio_path:
             temp_audio = audio_path
         else:
             # 从视频中提取音频
-            video = VideoFileClip(video_path)
             temp_audio = "temp_audio.wav"
             video.audio.write_audiofile(temp_audio, logger=None)
 
@@ -455,10 +456,10 @@ class MOSEIExtractor:
         print("Processing completed and files saved successfully.")
 #-------------------------------------运行主函数-----------------------------------------------------
 if __name__ == "__main__":
-    processor = MOSEIExtractor(language="zh")
+    processor = MOSEIExtractor(language="unknown")
     processor.process_dataset(
-        video_dir="video2pkl/video2pkl/ch_video",
-        csv_path="video2pkl/video2pkl/ch_video.csv",
-        output_dir="E:/kaggle/MSAbypkl/data_pkl/ch_pkl",
-        audio_dir=None
+        video_dir="video2pkl/video2pkl/mix_video",
+        csv_path="video2pkl/video2pkl/mix_video.csv",
+        output_dir="E:/kaggle/MSAbypkl/data_pkl/mix_pkl",
+        audio_dir="video2pkl/video2pkl/en_audio"
     )

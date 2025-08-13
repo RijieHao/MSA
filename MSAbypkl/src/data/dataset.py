@@ -76,7 +76,7 @@ class MOSEIDataset(Dataset):
         
         # Check if required fields are present
         #optional_fields = ["labels", "id", "language","class_labels"]
-        optional_fields = ["id", "class_labels"]
+        optional_fields = ["id", "class_labels","language"]
         for field in optional_fields:
             if field not in self.data:
                 logger.warning(f"Optional field '{field}' not found in data file: {self.data_path}")
@@ -130,8 +130,8 @@ class MOSEIDataset(Dataset):
             sample["id"] = self.data["id"][idx]
 
         # Load language
-        #if "language" in self.data:
-        #    sample["language"] = self.data["language"][idx]
+        if "language" in self.data:
+            sample["language"] = self.data["language"][idx]
 
         return sample
 
@@ -171,7 +171,7 @@ class MOSEIUnimodalDataset(Dataset):
         
         # Check that the modality, labels, id, and language exist
         #optional_fields = ["labels", "id", "language","class_labels"]
-        optional_fields = ["id", "class_labels"]
+        optional_fields = ["id", "class_labels", "language"]
 
         for field in optional_fields:
             if field not in self.data:
@@ -217,8 +217,8 @@ class MOSEIUnimodalDataset(Dataset):
             sample["id"] = self.data["id"][idx]
 
         # Load language
-        #if "language" in self.data:
-        #    sample["language"] = self.data["language"][idx]
+        if "language" in self.data:
+            sample["language"] = self.data["language"][idx]
         
         return sample
 
@@ -237,7 +237,7 @@ def get_dataloaders(modalities=None, batch_size=BATCH_SIZE, num_workers=2):
     dataloaders = {}
     
     # Iterate over the splits
-    for split in ["train", "val", "test"]:
+    for split in ["train", "valid", "test"]:
         dataset = MOSEIDataset(split=split, modalities=modalities)
         
         shuffle = (split == "train") # Only shuffle for training

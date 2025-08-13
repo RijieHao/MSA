@@ -194,9 +194,9 @@ class TransformerFusionModel(nn.Module):
         Returns:
             Tensor: Fused sentiment prediction of shape [batch_size, 1].
         """
-        text_features = features["language"]
-        audio_features = features["acoustic"]
-        visual_features = features["visual"]
+        text_features = features["text"]
+        audio_features = features["audio"]
+        visual_features = features["vision"]
 
         # Encode each modality using respective transformer encoders
         text_encoded = self.text_encoder.get_encoded_features(text_features)

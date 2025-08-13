@@ -71,9 +71,9 @@ def train_model():
     """
     # Collect training parameters via user input
     checkpoint = input("Enter the path to the model checkpoint (.pt) or leave blank to train from scratch: ").strip()
-    modalities = input("Enter modalities (default: language,acoustic,visual): ").strip() or "language,acoustic,visual"
+    modalities = input("Enter modalities (default: text,audio,vision): ").strip() or "text,audio,vision"
     batch_size = int(input("Enter batch size (default: 32): ").strip() or BATCH_SIZE)
-    num_epochs = int(input("Enter number of epochs (default: 50): ").strip() or NUM_EPOCHS)
+    num_epochs = int(input("Enter number of epochs (default: 15): ").strip() or NUM_EPOCHS)
     hidden_dim = int(input("Enter hidden dimension (default: 256): ").strip() or HIDDEN_DIM)
     num_layers = int(input("Enter number of layers (default: 4): ").strip() or NUM_TRANSFORMER_LAYERS)
     num_heads = int(input("Enter number of heads (default: 8): ").strip() or NUM_ATTENTION_HEADS)
@@ -188,7 +188,7 @@ def train_model():
     trainer = Trainer(
         model=model,
         train_loader=dataloaders["train"],
-        val_loader=dataloaders["val"],
+        val_loader=dataloaders["valid"],
         test_loader=dataloaders["test"],
         device=device,
         log_dir=log_dir,
@@ -266,7 +266,7 @@ def evaluate_model():
         return
 
     # Collect evaluation parameters
-    modalities = input("Enter modalities (default: language,acoustic,visual): ").strip() or "language,acoustic,visual"
+    modalities = input("Enter modalities (default: text,audio,vision): ").strip() or "text,audio,vision"
     batch_size = input("Enter batch size (default: 32): ").strip() or BATCH_SIZE
     
     # Validate and set device

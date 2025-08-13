@@ -134,7 +134,7 @@ def get_predictions(model, dataloader, device, output_csv_path=None):
             # Get batch data
             if isinstance(batch, dict):
                 # Multimodal data
-                inputs = {k: v.to(device) for k, v in batch.items() if k != "label"}
+                inputs = {k: v.to(device) for k, v in batch.items() if k in ["text", "audio", "vision"]}
                 labels = batch["label"].to(device)
                 ids = batch["id"].to(device)
             else:
