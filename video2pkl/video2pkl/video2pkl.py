@@ -122,83 +122,106 @@ class MOSEIExtractor:
     def _extract_covarep_frame_features(self, y_segment, sr):
         """提取单帧音频特征"""
         features = []
+        fmin = 85
+        frame_length = min(369, len(y_segment) // 2)
         # 12 个 MFCC 系数
-        mfcc = librosa.feature.mfcc(y=y_segment, sr=sr, n_mfcc=12)
-        features.extend(np.mean(mfcc, axis=1) if mfcc.shape[1] > 0 else np.zeros(12))
+        if len(y_segment) > 512:
+            mfcc = librosa.feature.mfcc(y=y_segment, sr=sr, n_mfcc=12)
+            features.extend(np.mean(mfcc, axis=1) if mfcc.shape[1] > 0 else np.zeros(12))
+        else:
+            features.extend([0.0] * 12)
 
         # 基频特征 8
-        f0 = librosa.yin(y_segment, fmin=85, fmax=400, sr=sr)
-        f0_clean = f0[f0 > 0]
-        pitch_features = [
-            np.mean(f0_clean) if len(f0_clean) > 0 else 0.0,
-            np.std(f0_clean) if len(f0_clean) > 0 else 0.0,
-            np.median(f0_clean) if len(f0_clean) > 0 else 0.0,
-            np.percentile(f0_clean, 25) if len(f0_clean) > 0 else 0.0,
-            np.percentile(f0_clean, 75) if len(f0_clean) > 0 else 0.0,
-            np.min(f0_clean) if len(f0_clean) > 0 else 0.0,
-            np.max(f0_clean) if len(f0_clean) > 0 else 0.0,
-            len(f0_clean) / len(f0) if len(f0) > 0 else 0.0
-        ]
+        if len(y_segment) > frame_length and frame_length > 0:
+            f0 = librosa.yin(y_segment, fmin=85, fmax=min(400, sr//4), frame_length=frame_length)
+            f0_clean = f0[f0 > 0]
+            if len(f0_clean) > 0:
+                pitch_features = [
+                    np.mean(f0_clean) if len(f0_clean) > 0 else 0.0,
+                    np.std(f0_clean) if len(f0_clean) > 0 else 0.0,
+                    np.median(f0_clean) if len(f0_clean) > 0 else 0.0,
+                    np.percentile(f0_clean, 25) if len(f0_clean) > 0 else 0.0,
+                    np.percentile(f0_clean, 75) if len(f0_clean) > 0 else 0.0,
+                    np.min(f0_clean) if len(f0_clean) > 0 else 0.0,
+                    np.max(f0_clean) if len(f0_clean) > 0 else 0.0,
+                    len(f0_clean) / len(f0) if len(f0) > 0 else 0.0
+                ]
+            else:
+                pitch_features = [0.0] * 8
+        else:
+            pitch_features = [0.0] * 8
         features.extend(pitch_features)
 
         # 浊音/清音特征 6
-        # 零交叉率
-        zcr = np.mean(librosa.feature.zero_crossing_rate(y_segment))
-        # 频谱重心
-        spectral_centroid = np.mean(librosa.feature.spectral_centroid(y=y_segment, sr=sr))
-        # 频谱带宽
-        spectral_bandwidth = np.mean(librosa.feature.spectral_bandwidth(y=y_segment, sr=sr))
-        # 频谱平坦度 - 修复API调用
-        spectral_flatness = np.mean(librosa.feature.spectral_flatness(y=y_segment))
-        # 能量
-        energy = np.sum(y_segment ** 2) / len(y_segment)
-        harmonic, percussive = librosa.effects.hpss(y_segment)
-        hnr = np.sum(harmonic ** 2) / (np.sum(percussive ** 2) + 1e-8)
-        features.extend([
-            zcr, spectral_centroid, spectral_bandwidth, 
-            spectral_flatness, energy, hnr
-        ])
+        if len(y_segment) > 512:
+            # 零交叉率
+            zcr = np.mean(librosa.feature.zero_crossing_rate(y_segment))
+            # 频谱重心
+            spectral_centroid = np.mean(librosa.feature.spectral_centroid(y=y_segment, sr=sr))
+            # 频谱带宽
+            spectral_bandwidth = np.mean(librosa.feature.spectral_bandwidth(y=y_segment, sr=sr))
+            # 频谱平坦度 - 修复API调用
+            spectral_flatness = np.mean(librosa.feature.spectral_flatness(y=y_segment))
+            # 能量
+            energy = np.sum(y_segment ** 2) / len(y_segment)
+            harmonic, percussive = librosa.effects.hpss(y_segment)
+            hnr = np.sum(harmonic ** 2) / (np.sum(percussive ** 2) + 1e-8)
+            features.extend([
+                zcr, spectral_centroid, spectral_bandwidth, 
+                spectral_flatness, energy, hnr
+            ])
+        else:
+            features.extend([0.0] * 6)
 
 
         # 5. 峰值斜率参数 (Peak Slope Parameters) - 4维
-        hop_length = min(512, len(y_segment)//4)
-        stft = librosa.stft(y_segment, hop_length=hop_length)
-        envelope = np.abs(stft)
-        envelope_mean = np.mean(envelope, axis=0)
-        if len(envelope_mean) > 2:
-            envelope_diff = np.diff(envelope_mean)
-            slope_features = [
-                np.mean(envelope_diff[envelope_diff > 0]) if np.any(envelope_diff > 0) else 0.0,
-                np.mean(envelope_diff[envelope_diff < 0]) if np.any(envelope_diff < 0) else 0.0,
-                np.std(envelope_diff),
-                np.max(np.abs(envelope_diff))
-            ]
-            slope_features = [x if not np.isnan(x) else 0.0 for x in slope_features]
+        if len(y_segment) > 256:
+            hop_length = min(512, len(y_segment)//4)
+            stft = librosa.stft(y_segment, hop_length=hop_length)
+            envelope = np.abs(stft)
+            envelope_mean = np.mean(envelope, axis=0)
+            if len(envelope_mean) > 2:
+                envelope_diff = np.diff(envelope_mean)
+                slope_features = [
+                    np.mean(envelope_diff[envelope_diff > 0]) if np.any(envelope_diff > 0) else 0.0,
+                    np.mean(envelope_diff[envelope_diff < 0]) if np.any(envelope_diff < 0) else 0.0,
+                    np.std(envelope_diff),
+                    np.max(np.abs(envelope_diff))
+                ]
+                slope_features = [x if not np.isnan(x) else 0.0 for x in slope_features]
+            else:
+                slope_features = [0.0] * 4  
         else:
-            slope_features = [0.0] * 4    
+            slope_features = [0.0] * 4     
         features.extend(slope_features)
 
         # 6. 最大分散商 (Maxima Dispersion Quotients) - 4维
-        peaks, _ = find_peaks(np.abs(y_segment), height=0.01)
-        if len(peaks) > 1:
-            peak_intervals = np.diff(peaks)
-            dispersion_features = [
-                np.mean(peak_intervals),
-                np.std(peak_intervals),
-                np.min(peak_intervals),
-                np.max(peak_intervals)
-            ]
+        if len(y_segment) > 512:
+            peaks, _ = find_peaks(np.abs(y_segment), height=0.01)
+            if len(peaks) > 1:
+                peak_intervals = np.diff(peaks)
+                dispersion_features = [
+                    np.mean(peak_intervals),
+                    np.std(peak_intervals),
+                    np.min(peak_intervals),
+                    np.max(peak_intervals)
+                ]
+            else:
+                dispersion_features = [0.0] * 4
         else:
             dispersion_features = [0.0] * 4
         features.extend(dispersion_features)
 
         # 其他情感特征补齐到 40 维
         remaining_dims = AUDIO_FEATURE_SIZE - len(features)
-        chroma = librosa.feature.chroma_stft(y=y_segment, sr=sr, hop_length=hop_length)
-        chroma_mean = np.mean(chroma, axis=1) if chroma.shape[1] > 0 else np.zeros(12)
-        additional_features = list(chroma_mean[:remaining_dims])
+        if len(y_segment) > 512:
+            chroma = librosa.feature.chroma_stft(y=y_segment, sr=sr, hop_length=min(512, len(y_segment)//4))
+            chroma_mean = np.mean(chroma, axis=1) if chroma.shape[1] > 0 else np.zeros(12)
+            additional_features = list(chroma_mean[:remaining_dims])
+        else:
+            additional_features = [0.0] * remaining_dims
         features.extend(additional_features)
-
+        
         features = features[:AUDIO_FEATURE_SIZE]
         while len(features) < AUDIO_FEATURE_SIZE:
             features.append(0.0)
