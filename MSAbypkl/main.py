@@ -135,7 +135,7 @@ def train_model():
     dataloaders = get_dataloaders(
         modalities=modalities, 
         batch_size=batch_size,
-        use_all_data=True
+        #use_all_data=True
     )
 
     # Create model
@@ -297,7 +297,7 @@ def evaluate_model():
     dataloaders = get_dataloaders(
         modalities=modalities,
         batch_size=batch_size,
-        use_all_data=True
+        #use_all_data=True
     )
     test_loader = dataloaders["test"]
     logger.info("Data loaded.")

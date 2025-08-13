@@ -196,6 +196,9 @@ def evaluate_mosei(model, dataloader, device):
     precision = precision_score(all_labels, all_preds, average="weighted")
     recall = recall_score(all_labels, all_preds, average="weighted")
     class_report = classification_report(all_labels, all_preds, output_dict=True)
+    batch_correct = (all_preds == all_labels).sum()  # 预测正确的样本数
+    batch_total = len(all_labels)  # 总样本数
+    batch_accuracy = batch_correct / batch_total 
     '''
     下面是回归指标
     mae = calc_mae(all_preds, all_labels)
@@ -220,6 +223,7 @@ def evaluate_mosei(model, dataloader, device):
         "f1": f1,
         "precision": precision,
         "recall": recall,
+        "batch_accuracy": batch_accuracy,
         "classification_report": class_report
     }
     return metrics
@@ -250,6 +254,7 @@ def log_metrics(metrics, split, epoch=None):
     logger.info(f"  F1 Score: {metrics['f1']:.4f}")
     logger.info(f"  Precision: {metrics['precision']:.4f}")
     logger.info(f"  Recall: {metrics['recall']:.4f}")
+    logger.info(f"  Batch Accuracy: {metrics['batch_accuracy']:.4f}")  # 输出总体准确率
 
     # Log per-class metrics
     logger.info("  Classification Report:")

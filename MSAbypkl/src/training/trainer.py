@@ -311,7 +311,7 @@ class Trainer:
                 val_loss, val_metrics = self.validate(epoch)
                 val_losses.append(val_loss)
                 val_metrics_list.append(val_metrics)
-                logger.info(f"Epoch {epoch} - Validation accuracy: {val_loss:.4f}")
+                logger.info(f"Epoch {epoch} - Validation loss: {val_loss:.4f}")
                 log_metrics(val_metrics, "val", epoch)
 
                 # Save train metrics too (optional)

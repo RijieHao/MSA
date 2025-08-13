@@ -112,10 +112,10 @@ class MOSEIExtractor:
         features = []
         for i in range(0, len(y), hop_length):
             frame = y[i:i + hop_length]
-            if len(frame) > 0:
+            if len(frame) > 256:
                 frame_features = self._extract_covarep_frame_features(frame, sr)
                 features.append(frame_features)
-            elif len(frame) == 0:
+            else:
                 features.append(np.zeros(AUDIO_FEATURE_SIZE))
         features = np.array(features)
 
@@ -483,11 +483,11 @@ class MOSEIExtractor:
         print("Processing completed and files saved successfully.")
 #-------------------------------------运行主函数-----------------------------------------------------
 if __name__ == "__main__":
-    processor = MOSEIExtractor(language="unknown")
+    processor = MOSEIExtractor(language="en")
     processor.process_dataset(
-        video_dir="video2pkl/video2pkl/test_video",
-        csv_path="video2pkl/video2pkl/test_video.csv",
-        output_dir="E:/kaggle/MSAbypkl/data/data_pkl/mix_pkl",
-        audio_dir=None
-        #audio_dir="video2pkl/video2pkl/en_audio"
+        video_dir="video2pkl/video2pkl/mix_video",
+        csv_path="video2pkl/video2pkl/en_mix_video.csv",
+        output_dir="E:/kaggle/MSAbypkl/data/data_pkl/en_mix_pkl",
+        #audio_dir=None
+        audio_dir="video2pkl/video2pkl/en_audio"
     )
