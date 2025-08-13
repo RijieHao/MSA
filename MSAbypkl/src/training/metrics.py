@@ -136,13 +136,13 @@ def get_predictions(model, dataloader, device, output_csv_path=None):
                 # Multimodal data
                 inputs = {k: v.to(device) for k, v in batch.items() if k in ["text", "audio", "vision"]}
                 labels = batch["label"].to(device)
-                ids = batch["id"].to(device)
+                ids = batch["id"]
             else:
                 # Unimodal data
                 inputs, labels, ids, language = batch
                 inputs = inputs.to(device)
                 labels = labels.to(device)
-                ids = ids.to(device)
+                ids = ids
 
             # Forward pass
             outputs = model(inputs)
@@ -151,7 +151,6 @@ def get_predictions(model, dataloader, device, output_csv_path=None):
             #preds = outputs.squeeze().cpu().numpy()
             preds = torch.argmax(outputs, dim=1).cpu().numpy()
             labels = labels.cpu().numpy()
-            ids = ids.cpu().numpy()
             
             
             # 添加 NaN 处理
@@ -257,8 +256,3 @@ def log_metrics(metrics, split, epoch=None):
     for label, report in metrics["classification_report"].items():
         if isinstance(report, dict):  # Skip 'accuracy' key in classification_report
             logger.info(f"    Class {label}: Precision={report['precision']:.4f}, Recall={report['recall']:.4f}, F1={report['f1-score']:.4f}")
-
-def evaluate_classification(preds, labels):
-    accuracy = accuracy_score(labels, preds)
-    f1 = f1_score(labels, preds, average="weighted")
-    return {"accuracy": accuracy, "f1": f1}

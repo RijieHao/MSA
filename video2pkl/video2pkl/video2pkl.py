@@ -115,6 +115,8 @@ class MOSEIExtractor:
             if len(frame) > 0:
                 frame_features = self._extract_covarep_frame_features(frame, sr)
                 features.append(frame_features)
+            elif len(frame) == 0:
+                features.append(np.zeros(AUDIO_FEATURE_SIZE))
         features = np.array(features)
 
         # 生成高级特征
@@ -127,6 +129,7 @@ class MOSEIExtractor:
         # 12 个 MFCC 系数
         if len(y_segment) > 512:
             mfcc = librosa.feature.mfcc(y=y_segment, sr=sr, n_mfcc=12)
+            mfcc = np.nan_to_num(mfcc, nan=0.0)
             features.extend(np.mean(mfcc, axis=1) if mfcc.shape[1] > 0 else np.zeros(12))
         else:
             features.extend([0.0] * 12)
@@ -134,6 +137,7 @@ class MOSEIExtractor:
         # 基频特征 8
         if len(y_segment) > frame_length and frame_length > 0:
             f0 = librosa.yin(y_segment, fmin=85, fmax=min(400, sr//4), frame_length=frame_length)
+            f0 = np.nan_to_num(f0, nan=0.0)
             f0_clean = f0[f0 > 0]
             if len(f0_clean) > 0:
                 pitch_features = [
@@ -481,8 +485,9 @@ class MOSEIExtractor:
 if __name__ == "__main__":
     processor = MOSEIExtractor(language="unknown")
     processor.process_dataset(
-        video_dir="video2pkl/video2pkl/mix_video",
-        csv_path="video2pkl/video2pkl/mix_video.csv",
-        output_dir="E:/kaggle/MSAbypkl/data_pkl/mix_pkl",
-        audio_dir="video2pkl/video2pkl/en_audio"
+        video_dir="video2pkl/video2pkl/test_video",
+        csv_path="video2pkl/video2pkl/test_video.csv",
+        output_dir="E:/kaggle/MSAbypkl/data/data_pkl/mix_pkl",
+        audio_dir=None
+        #audio_dir="video2pkl/video2pkl/en_audio"
     )

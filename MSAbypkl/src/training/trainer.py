@@ -12,7 +12,7 @@ from tqdm import tqdm
 # Add project root to system path for module resolution
 sys.path.append(str(Path(__file__).resolve().parents[2]))
 
-from src.training.metrics import evaluate_mosei, log_metrics,evaluate_classification
+from src.training.metrics import evaluate_mosei, log_metrics
 from src.utils.logging import setup_logging
 from config import DEVICE, MODELS_DIR, LOGS_DIR
 
@@ -186,17 +186,16 @@ class Trainer:
                 all_labels.append(labels)
         
         # Calculate average loss
-        #avg_loss = val_loss / len(self.val_loader)
+        avg_loss = val_loss / len(self.val_loader)
         
         # Concatenate batch results
         all_preds = np.concatenate(all_preds)
         all_labels = np.concatenate(all_labels)
-        classification_metrics = evaluate_classification(all_preds, all_labels)
 
         # Evaluate using metrics
         metrics = evaluate_mosei(self.model, self.val_loader, self.device)
         
-        return classification_metrics, metrics
+        return avg_loss, metrics
     
     def test(self):
         """
@@ -312,7 +311,7 @@ class Trainer:
                 val_loss, val_metrics = self.validate(epoch)
                 val_losses.append(val_loss)
                 val_metrics_list.append(val_metrics)
-                logger.info(f"Epoch {epoch} - Validation loss: {val_loss:.4f}")
+                logger.info(f"Epoch {epoch} - Validation accuracy: {val_loss:.4f}")
                 log_metrics(val_metrics, "val", epoch)
 
                 # Save train metrics too (optional)
