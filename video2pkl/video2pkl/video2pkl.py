@@ -123,7 +123,7 @@ class MOSEIExtractor:
         """提取单帧音频特征"""
         features = []
         fmin = 85
-        frame_length = max(256, min(369, len(y_segment) // 2))
+        frame_length = max(369, min(369, len(y_segment) // 2))
         # 12 个 MFCC 系数
         if len(y_segment) > 512:
             mfcc = librosa.feature.mfcc(y=y_segment, sr=sr, n_mfcc=12)

@@ -32,7 +32,7 @@ class MOSEIDataset(Dataset):
         split (str): Dataset split to use ("train", "val", or "test").
         modalities (list): Modalities to include (default = all three).
     """
-    def __init__(self, split="train", modalities=None):
+    def __init__(self, split="train", modalities=None, use_all_data=False, force_test_mode=False):
         self.split = split
         self.modalities = modalities or ["text", "audio", "vision"]
         self.label_mapping = {
@@ -48,20 +48,31 @@ class MOSEIDataset(Dataset):
             if modality not in ["text", "audio", "vision"]:
                 raise ValueError(f"Invalid modality: {modality}")
 
-        # Construct path to dataset split
-        self.data_path = PROCESSED_DATA_DIR / DATASET_NAME / f"{split}_data.pkl"
-        if not self.data_path.exists():
-            raise FileNotFoundError(
-                f"Data file not found: {self.data_path}. "
-                f"Run preprocessing script first."
-            )
+        # Construct paths to dataset splits
+        base_path = PROCESSED_DATA_DIR / DATASET_NAME
+        train_path = base_path / "train_data.pkl"
+        valid_path = base_path / "valid_data.pkl"
+        test_path = base_path / "test_data.pkl"
 
-        # Load the data for the split
-        with open(self.data_path, "rb") as f:
-            self.data = pickle.load(f)
-        
+        if use_all_data and split == "train":
+            # 合并 train, valid, test 数据
+            self.data = self._load_and_merge_data([train_path, valid_path, test_path])
+        elif force_test_mode and split in ["valid", "test"]:
+            # 强制按 test 模式读取
+            self.data = self._load_and_merge_data([test_path])
+        else:
+            # 正常加载指定 split 的数据
+            self.data_path = base_path / f"{split}_data.pkl"
+            if not self.data_path.exists():
+                raise FileNotFoundError(
+                    f"Data file not found: {self.data_path}. "
+                    f"Run preprocessing script first."
+                )
+            with open(self.data_path, "rb") as f:
+                self.data = pickle.load(f)
+
         # Load feature dimension metadata (if available)
-        metadata_path = PROCESSED_DATA_DIR / DATASET_NAME / "metadata.pkl"
+        metadata_path = base_path / "metadata.pkl"
         if metadata_path.exists():
             with open(metadata_path, "rb") as f:
                 self.metadata = pickle.load(f)
@@ -73,16 +84,32 @@ class MOSEIDataset(Dataset):
                 "audio_dim": AUDIO_FEATURE_SIZE,
                 "visual_dim": VISUAL_FEATURE_SIZE
             }
-        
+
         # Check if required fields are present
         #optional_fields = ["labels", "id", "language","class_labels"]
         optional_fields = ["id", "class_labels","language"]
         for field in optional_fields:
             if field not in self.data:
-                logger.warning(f"Optional field '{field}' not found in data file: {self.data_path}")
+                logger.warning(f"Optional field '{field}' not found in data")
 
         self.num_samples = len(self.data["class_labels"])
         logger.info(f"Loaded {self.num_samples} samples for {split} split")
+
+    def _load_and_merge_data(self, paths):
+        """Load and merge data from multiple pkl files."""
+        merged_data = {}
+        for path in paths:
+            if path.exists():
+                with open(path, "rb") as f:
+                    data = pickle.load(f)
+                for key, value in data.items():
+                    if key not in merged_data:
+                        merged_data[key] = value
+                    else:
+                        merged_data[key].extend(value)
+            else:
+                logger.warning(f"Data file not found: {path}")
+        return merged_data
 
     def __len__(self):
         """
@@ -104,7 +131,12 @@ class MOSEIDataset(Dataset):
         # Load each modality if available; otherwise, create a zero tensor
         for modality in self.modalities:
             if modality in self.data:
-                sample[modality] = torch.tensor(self.data[modality][idx], dtype=torch.float32)
+                modality_data = self.data[modality][idx]
+                # 检查是否包含 NaN 值，如果有则替换为零
+                if np.isnan(modality_data).any():
+                    logger.warning(f"Modality {modality} for sample {idx} contains NaN values. Replacing with zeros.")
+                    modality_data = np.nan_to_num(modality_data, nan=0.0)
+                sample[modality] = torch.tensor(modality_data, dtype=torch.float32)
             else:
                 logger.warning(f"Modality {modality} not found in data")
                 # Create empty tensor with proper dimensions
@@ -222,7 +254,7 @@ class MOSEIUnimodalDataset(Dataset):
         
         return sample
 
-def get_dataloaders(modalities=None, batch_size=BATCH_SIZE, num_workers=2):
+def get_dataloaders(modalities=None, batch_size=BATCH_SIZE, num_workers=2, use_all_data=False, force_test_mode=False):
     """
     Create multimodal dataloaders for train, val, and test splits.
 
@@ -235,19 +267,49 @@ def get_dataloaders(modalities=None, batch_size=BATCH_SIZE, num_workers=2):
         dict: Dataloaders for each split.
     """
     dataloaders = {}
-    
-    # Iterate over the splits
-    for split in ["train", "valid", "test"]:
-        dataset = MOSEIDataset(split=split, modalities=modalities)
-        
-        shuffle = (split == "train") # Only shuffle for training
-        dataloaders[split] = DataLoader(
-            dataset,
-            batch_size=batch_size,
-            shuffle=shuffle,
-            num_workers=num_workers,
-            pin_memory=True
-        )
+
+    train_dataset = MOSEIDataset(
+    split="train",
+    modalities=modalities,
+    use_all_data=use_all_data,  # 合并 train, valid, test 数据
+    force_test_mode=False  # 不影响 valid 和 test
+    )
+    dataloaders["train"] = DataLoader(
+        train_dataset,
+        batch_size=batch_size,
+        shuffle=True,  # 训练数据需要打乱
+        num_workers=num_workers,
+        pin_memory=True
+    )
+
+    valid_dataset = MOSEIDataset(
+        split="valid",
+        modalities=modalities,
+        use_all_data=False,  # 确保 valid 数据不变
+        force_test_mode=False  # 不影响 test
+    )
+    dataloaders["valid"] = DataLoader(
+        valid_dataset,
+        batch_size=batch_size,
+        shuffle=False,  # 验证数据不需要打乱
+        num_workers=num_workers,
+        pin_memory=True
+    )
+
+    # Test split
+    test_dataset = MOSEIDataset(
+        split="test",
+        modalities=modalities,
+        use_all_data=False,  # 确保 test 数据不变
+        force_test_mode=force_test_mode  # 如果需要强制按 test 模式读取
+    )
+    dataloaders["test"] = DataLoader(
+        test_dataset,
+        batch_size=batch_size,
+        shuffle=False,  # 测试数据不需要打乱
+        num_workers=num_workers,
+        pin_memory=True
+    )
     
     return dataloaders
 

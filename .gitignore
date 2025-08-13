@@ -12,6 +12,8 @@ video2pkl/unaligned_en.pkl
 video2pkl/unaligned_zh.pkl
 video2pkl/video2pkl/mix_video/
 video2pkl/video2pkl/en_audio/
+video2pkl/video2pkl/*.zip
+MSAbypkl/data/data_pkl/
 # VS Code
 .vscode/
 *.code-workspace
