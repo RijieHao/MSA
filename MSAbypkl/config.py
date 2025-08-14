@@ -40,8 +40,8 @@ DATASET_URL = "http://immortal.multicomp.cs.cmu.edu/CMU-MOSEI/"
 TEXT_MAX_LENGTH = 128
 
 # Feature dimensions for each modality
-AUDIO_FEATURE_SIZE = 25#un_zh:25 ,normal:40     # Number of MFCC features per audio frame
-VISUAL_FEATURE_SIZE = 177 #un_zh:177;normal:46;noraml2:35     # Number of facial landmark points or visual features
+AUDIO_FEATURE_SIZE = 40#un_zh:25 ,normal:40     # Number of MFCC features per audio frame
+VISUAL_FEATURE_SIZE = 35 #un_zh:177;normal:46;noraml2:35     # Number of facial landmark points or visual features
 
 # Dimensionality of the BERT-based text embeddings
 TEXT_EMBEDDING_DIM = 768
@@ -78,7 +78,7 @@ EARLY_STOPPING_PATIENCE = 10
 GRADIENT_CLIP_VAL = 1.0
 
 # Number of classes for classification task
-NUM_CLASSES = 1  #1代表回归任务,5代表5分类任务
+NUM_CLASSES = 5  #1代表回归任务,5代表5分类任务
 
 # Automatically choose the best available device: MPS (Apple Silicon), CUDA (NVIDIA GPU), or CPU
 DEVICE = "mps" if torch.backends.mps.is_available() else "cuda" if torch.cuda.is_available() else "cpu" 

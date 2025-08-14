@@ -18,7 +18,7 @@ from skimage.feature import hog
 # 配置参数
 TEXT_EMBEDDING_DIM = 768
 AUDIO_FEATURE_SIZE = 40
-VISUAL_FEATURE_SIZE = 46
+VISUAL_FEATURE_SIZE = 35
 SEED = 42
 
 class MOSEIExtractor:
@@ -317,16 +317,16 @@ class MOSEIExtractor:
         
 
         # 眼部注视方向 4 维
-        left_eye_center = np.mean([[landmarks.landmark[i].x, landmarks.landmark[i].y] 
-                                  for i in [33, 133]], axis=0)
-        right_eye_center = np.mean([[landmarks.landmark[i].x, landmarks.landmark[i].y] 
-                                   for i in [362, 263]], axis=0)
+        #left_eye_center = np.mean([[landmarks.landmark[i].x, landmarks.landmark[i].y] 
+        #                          for i in [33, 133]], axis=0)
+        #right_eye_center = np.mean([[landmarks.landmark[i].x, landmarks.landmark[i].y] 
+        #                           for i in [362, 263]], axis=0)
         # 计算注视方向
-        left_gaze_x = (left_eye_center[0] - 0.3) * 2
-        left_gaze_y = (left_eye_center[1] - 0.4) * 2
-        right_gaze_x = (right_eye_center[0] - 0.7) * 2
-        right_gaze_y = (right_eye_center[1] - 0.4) * 2
-        features.extend([left_gaze_x, left_gaze_y, right_gaze_x, right_gaze_y])
+        #left_gaze_x = (left_eye_center[0] - 0.3) * 2
+        #left_gaze_y = (left_eye_center[1] - 0.4) * 2
+        #right_gaze_x = (right_eye_center[0] - 0.7) * 2
+        #right_gaze_y = (right_eye_center[1] - 0.4) * 2
+        #features.extend([left_gaze_x, left_gaze_y, right_gaze_x, right_gaze_y])
 
         # FACS 动作单元# 简化为 10 维
         aus = []
@@ -365,50 +365,50 @@ class MOSEIExtractor:
         au20 = mouth_width * 100
         aus.append(au20)
         # AU25 - 嘴唇分离
-        mouth_open = abs(landmarks.landmark[13].y - landmarks.landmark[14].y)
-        au25 = mouth_open * 100
-        aus.append(au25)
+        #mouth_open = abs(landmarks.landmark[13].y - landmarks.landmark[14].y)
+        #au25 = mouth_open * 100
+        #aus.append(au25)
         features.extend(aus) 
 
 
         #脸部情感特征 6维
-        emotions = []
+        #emotions = []
         # Happiness - 基于嘴角上扬
-        left_corner = landmarks.landmark[61].y
-        right_corner = landmarks.landmark[84].y
-        mouth_center = landmarks.landmark[13].y
-        corner_avg = (left_corner + right_corner) / 2
-        mouth_corner_lift = mouth_center - corner_avg
-        happiness = max(0, mouth_corner_lift) * 5
-        emotions.append(happiness)
+        #left_corner = landmarks.landmark[61].y
+        #right_corner = landmarks.landmark[84].y
+        #mouth_center = landmarks.landmark[13].y
+        #corner_avg = (left_corner + right_corner) / 2
+        #mouth_corner_lift = mouth_center - corner_avg
+        #happiness = max(0, mouth_corner_lift) * 5
+        #emotions.append(happiness)
         
         # Sadness - 基于嘴角下拉和眉毛下垂
-        mouth_corner_drop = -min(0, mouth_corner_lift)
-        brow_drop = max(0, 0.45 - landmarks.landmark[55].y)
-        sadness = (mouth_corner_drop + brow_drop) * 3
-        emotions.append(sadness)
+        #mouth_corner_drop = -min(0, mouth_corner_lift)
+        #brow_drop = max(0, 0.45 - landmarks.landmark[55].y)
+        #sadness = (mouth_corner_drop + brow_drop) * 3
+        #emotions.append(sadness)
         
         # Anger - 基于眉毛紧锁
-        brow_furrow = max(0, 0.1 - abs(landmarks.landmark[55].x - landmarks.landmark[70].x))
-        anger = brow_furrow * 20
-        emotions.append(anger)
+        #brow_furrow = max(0, 0.1 - abs(landmarks.landmark[55].x - landmarks.landmark[70].x))
+        #anger = brow_furrow * 20
+        #emotions.append(anger)
         
         # Disgust - 基于鼻子皱起
-        nose_scrunch = abs(landmarks.landmark[125].x - landmarks.landmark[141].x)
-        disgust = max(0, nose_scrunch - 0.02) * 50
-        emotions.append(disgust)
+        #nose_scrunch = abs(landmarks.landmark[125].x - landmarks.landmark[141].x)
+        #disgust = max(0, nose_scrunch - 0.02) * 50
+        #emotions.append(disgust)
         
         # Surprise - 基于眉毛上抬和嘴巴张开
-        brow_raise = max(0, 0.4 - landmarks.landmark[70].y)
-        mouth_open = abs(landmarks.landmark[13].y - landmarks.landmark[14].y)
-        surprise = (brow_raise + mouth_open) * 10
-        emotions.append(surprise)
+        #brow_raise = max(0, 0.4 - landmarks.landmark[70].y)
+        #mouth_open = abs(landmarks.landmark[13].y - landmarks.landmark[14].y)
+        #surprise = (brow_raise + mouth_open) * 10
+        #emotions.append(surprise)
         
         # Fear - 基于眼睛张大和眉毛上抬
-        eye_wide = abs(landmarks.landmark[33].y - landmarks.landmark[145].y)
-        fear = (eye_wide + brow_raise) * 8
-        emotions.append(fear) 
-        features.extend(emotions) 
+        #eye_wide = abs(landmarks.landmark[33].y - landmarks.landmark[145].y)
+        #fear = (eye_wide + brow_raise) * 8
+        #emotions.append(fear) 
+        #features.extend(emotions) 
 
         features = features[:VISUAL_FEATURE_SIZE]
         while len(features) < VISUAL_FEATURE_SIZE:

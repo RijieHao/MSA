@@ -42,6 +42,19 @@ class MOSEIDataset(Dataset):
             "WPOS": 3,
             "SPOS": 4
         }
+        self.label_mapping2 = {
+            -1: 0,
+            -0.8: 0,
+            -0.6: 1,
+            -0.4: 1,
+            -0.2: 1,
+            0: 2,
+            0.2: 3,
+            0.4: 3,
+            0.6: 3,
+            0.8: 4,
+            1: 4,
+        }
 
         # Validate provided modalities
 
@@ -131,21 +144,32 @@ class MOSEIDataset(Dataset):
             dict: Dictionary with modality tensors, the label tensor, ID, and language.
         """
         sample = {}
+        modality_dims = {
+            "text": TEXT_EMBEDDING_DIM,
+            "audio": AUDIO_FEATURE_SIZE,
+            "vision": VISUAL_FEATURE_SIZE
+        }
 
         # Load each modality if available; otherwise, create a zero tensor
         for modality in self.modalities:
+            target_dim = modality_dims.get(modality, 0)
             if modality in self.data:
                 modality_data = self.data[modality][idx]
                 # 检查是否包含 NaN 值，如果有则替换为零
                 if np.isnan(modality_data).any():
                     logger.warning(f"Modality {modality} for sample {idx} contains NaN values. Replacing with zeros.")
                     modality_data = np.nan_to_num(modality_data, nan=0.0)
+                modality_data = np.array(modality_data)
+                # 截断或补零到目标维度
+                if modality_data.shape[-1] > target_dim:
+                    modality_data = modality_data[..., :target_dim]
+                elif modality_data.shape[-1] < target_dim:
+                    pad_width = target_dim - modality_data.shape[-1]
+                    modality_data = np.pad(modality_data, (0, pad_width), mode='constant')
                 sample[modality] = torch.tensor(modality_data, dtype=torch.float32)
             else:
                 logger.warning(f"Modality {modality} not found in data")
-                # Create empty tensor with proper dimensions
-                dim = self.metadata.get(f"{modality}_dim", 0)
-                sample[modality] = torch.zeros(dim, dtype=torch.float32)
+                sample[modality] = torch.zeros(target_dim, dtype=torch.float32)
         
 
         if "class_labels" in self.data:
@@ -157,7 +181,15 @@ class MOSEIDataset(Dataset):
             else:
                 sample["label"] = label_idx
         elif "regression_labels" in self.data:
-            sample["label"] = torch.tensor(self.data["regression_labels"][idx], dtype=torch.float32)
+            if NUM_CLASSES == 1:
+                sample["label"] = torch.tensor(self.data["regression_labels"][idx], dtype=torch.float32)
+            elif NUM_CLASSES == 5:
+                regression_label = self.data["regression_labels"][idx]
+                mapped_label = self.label_mapping2.get(regression_label, -1)  # 映射到 label_mapping2
+                if mapped_label == -1:
+                    logger.warning(f"Unknown regression label '{regression_label}' for sample {idx}")
+                sample["label"] = torch.tensor(mapped_label, dtype=torch.long)  # 转为分类任务的整数标签
+
 
         # Load label
         #if "labels" in self.data:
