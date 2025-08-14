@@ -136,7 +136,8 @@ def train_model():
         modalities=modalities, 
         batch_size=batch_size,
         num_workers=0,
-        #use_all_data=True
+        use_all_data=True,
+        force_test_mode=True
     )
 
     # Create model
@@ -233,14 +234,15 @@ def train_model():
     # Plot prediction scatter plot
     predictions, targets = get_predictions(model=best_model, dataloader=dataloaders["test"], device=device)
     scatter_path = Path(log_dir) / "multimodal_predictions.png"
-    if NUM_CLASSES==1:
-        plot_scatter_predictions(
-            predictions, targets,
-            save_path=scatter_path,
-            title="Multimodal Sentiment Test Predictions vs Actual"
-        )
-    else:
-        plot_confusion_matrix(targets, predictions, labels=["SNEG", "WNEG", "NEUT", "WPOS", "SPOS"], save_path=scatter_path)
+    #if NUM_CLASSES==1:
+
+        #plot_scatter_predictions(
+        #    predictions, targets,
+        #    save_path=scatter_path,
+        #    title="Multimodal Sentiment Test Predictions vs Actual"
+        #)
+    #else:
+    #    plot_confusion_matrix(targets, predictions, labels=["SNEG", "WNEG", "NEUT", "WPOS", "SPOS"], save_path=scatter_path)
     #)
     logger.info(f"Prediction scatter plot saved to {scatter_path}")
     
@@ -303,7 +305,8 @@ def evaluate_model():
         modalities=modalities,
         batch_size=batch_size,
         num_workers=0,
-        #use_all_data=True
+        #use_all_data=True,
+        #force_test_mode=True
     )
     test_loader = dataloaders["test"]
     logger.info("Data loaded.")
@@ -351,10 +354,10 @@ def evaluate_model():
 
     # Plot scatter predictions
     scatter_path = Path(log_dir) / "test_predictions.png"
-    if NUM_CLASSES==1:
-        plot_scatter_predictions(predictions, targets, save_path=scatter_path, title="Test Predictions vs Actual")
-    else:
-        plot_confusion_matrix(targets, predictions, labels=["SNEG", "WNEG", "NEUT", "WPOS", "SPOS"], save_path=scatter_path)
+    #if NUM_CLASSES==1:
+    #    plot_scatter_predictions(predictions, targets, save_path=scatter_path, title="Test Predictions vs Actual")
+    #else:
+    #    plot_confusion_matrix(targets, predictions, labels=["SNEG", "WNEG", "NEUT", "WPOS", "SPOS"], save_path=scatter_path)
     logger.info(f"Saved prediction scatter plot to {scatter_path}")
     
     logger.info("Evaluation complete!")

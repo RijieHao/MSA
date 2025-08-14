@@ -69,12 +69,13 @@ class MOSEIDataset(Dataset):
         valid_path = base_path / "valid_data.pkl"
         test_path = base_path / "test_data.pkl"
 
+
         if use_all_data and split == "train":
             # 合并 train, valid, test 数据
             self.data = self._load_and_merge_data([train_path, valid_path, test_path])
-        elif force_test_mode and split in ["valid", "test"]:
+        elif force_test_mode and split in ["test"]:
             # 强制按 test 模式读取
-            self.data = self._load_and_merge_data([test_path])
+            self.data = self._load_and_merge_data([valid_path])
         else:
             # 正常加载指定 split 的数据
 
@@ -218,7 +219,7 @@ class MOSEIDataset(Dataset):
             elif NUM_CLASSES == 5:
                 regression_label = self.data["regression_labels"][idx]
                 mapped_label = self.label_mapping2.get(regression_label, -1)
-                #mapped_label = self.label_mapping3.get(regression_label)   # 映射到 label_mapping2
+                #mapped_label = self.map_to_label3(regression_label)   # 映射到 label_mapping2
                 if mapped_label == -1:
                     logger.warning(f"Unknown regression label '{regression_label}' for sample {idx}")
                 sample["label"] = torch.tensor(mapped_label, dtype=torch.long)  # 转为分类任务的整数标签
@@ -338,35 +339,33 @@ def get_dataloaders(modalities=None, batch_size=BATCH_SIZE, num_workers=2, use_a
         dict: Dataloaders for each split.
     """
     dataloaders = {}
-
-    train_dataset = MOSEIDataset(
-    split="train",
-    modalities=modalities,
-    use_all_data=use_all_data,  # 合并 train, valid, test 数据
-    force_test_mode=False  # 不影响 valid 和 test
-    )
-    dataloaders["train"] = DataLoader(
-        train_dataset,
-        batch_size=batch_size,
-        shuffle=True,  # 训练数据需要打乱
-        num_workers=num_workers,
-        pin_memory=True
-    )
-
-    valid_dataset = MOSEIDataset(
-        split="valid",
+    if force_test_mode == False:
+        train_dataset = MOSEIDataset(
+        split="train",
         modalities=modalities,
-        use_all_data=False,  # 确保 valid 数据不变
-        force_test_mode=False  # 不影响 test
-    )
-    dataloaders["valid"] = DataLoader(
-        valid_dataset,
-        batch_size=batch_size,
-        shuffle=False,  # 验证数据不需要打乱
-        num_workers=num_workers,
-        pin_memory=True
-    )
-
+        use_all_data=use_all_data,  # 合并 train, valid, test 数据
+        force_test_mode=False  # 不影响 valid 和 test
+        )
+        dataloaders["train"] = DataLoader(
+            train_dataset,
+            batch_size=batch_size,
+            shuffle=True,  # 训练数据需要打乱
+            num_workers=num_workers,
+            pin_memory=True
+        )
+        valid_dataset = MOSEIDataset(
+            split="valid",
+            modalities=modalities,
+            use_all_data=False,  # 确保 valid 数据不变
+            force_test_mode=False  # 不影响 test
+        )
+        dataloaders["valid"] = DataLoader(
+            valid_dataset,
+            batch_size=batch_size,
+            shuffle=False,  # 验证数据不需要打乱
+            num_workers=num_workers,
+            pin_memory=True
+        )
     # Test split
     test_dataset = MOSEIDataset(
         split="test",

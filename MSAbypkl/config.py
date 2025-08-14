@@ -31,7 +31,7 @@ for directory in [ SRC_DIR, DATA_SRC_DIR, PROCESSED_DATA_DIR,
     directory.mkdir(exist_ok=True, parents=True)
 
 # Dataset identifier
-DATASET_NAME = "unaligned_en_pkl"
+DATASET_NAME = "valid_en_pkl"
 
 # URL for downloading the CMU-MOSEI dataset
 DATASET_URL = "http://immortal.multicomp.cs.cmu.edu/CMU-MOSEI/"

@@ -30,8 +30,13 @@ class MOSEIExtractor:
         self.whisper_model = whisper.load_model("base")
 
         # 初始化 BERT 模型
-        self.tokenizer = BertTokenizer.from_pretrained("bert-base-uncased")
-        self.bert_model = BertModel.from_pretrained("bert-base-uncased").to(self.device).eval()
+         # ===== 加载英文 BERT =====
+        self.en_tokenizer = BertTokenizer.from_pretrained("bert-base-uncased")
+        self.en_bert = BertModel.from_pretrained("bert-base-uncased").to(self.device).eval()
+
+        # ===== 加载中文 BERT =====
+        self.zh_tokenizer = BertTokenizer.from_pretrained("bert-base-chinese")
+        self.zh_bert = BertModel.from_pretrained("bert-base-chinese").to(self.device).eval()
 
         # 初始化 MediaPipe 面部检测
         self.face_detection = mp.solutions.face_detection.FaceDetection(model_selection=1, min_detection_confidence=0.5)
@@ -82,11 +87,17 @@ class MOSEIExtractor:
         words = [word["word"] for segment in result["segments"] for word in segment["words"]]
         text_str = " ".join(words)
 
+        if self.language.startswith("zh"):  # 中文
+            tokenizer = self.zh_tokenizer
+            bert_model = self.zh_bert
+        else:  # 英文默认
+            tokenizer = self.en_tokenizer
+            bert_model = self.en_bert
         # 使用 BERT 提取嵌入
-        inputs = self.tokenizer(text_str, padding="max_length", truncation=True, max_length=512, return_tensors="pt")
+        inputs = tokenizer(text_str, padding="max_length", truncation=True, max_length=512, return_tensors="pt")
         inputs = {key: val.to(self.device) for key, val in inputs.items()}
         with torch.no_grad():
-            outputs = self.bert_model(**inputs)
+            outputs = bert_model(**inputs)
             embedding = outputs.last_hidden_state[:, 0, :].cpu().numpy()
 
         return self.language, text_str, embedding[0]  # 返回 1D 向量
@@ -226,6 +237,7 @@ class MOSEIExtractor:
             additional_features = [0.0] * remaining_dims
         features.extend(additional_features)
         
+        features = np.nan_to_num(features, nan=0.0)
         features = features[:AUDIO_FEATURE_SIZE]
         while len(features) < AUDIO_FEATURE_SIZE:
             features.append(0.0)
@@ -483,11 +495,11 @@ class MOSEIExtractor:
         print("Processing completed and files saved successfully.")
 #-------------------------------------运行主函数-----------------------------------------------------
 if __name__ == "__main__":
-    processor = MOSEIExtractor(language="en")
+    processor = MOSEIExtractor(language="zh")
     processor.process_dataset(
         video_dir="video2pkl/video2pkl/mix_video",
-        csv_path="video2pkl/video2pkl/en_mix_video.csv",
-        output_dir="E:/kaggle/MSAbypkl/data/data_pkl/en_mix_pkl",
-        #audio_dir=None
-        audio_dir="video2pkl/video2pkl/en_audio"
+        csv_path="video2pkl/video2pkl/valid_video_zh.csv",
+        output_dir="E:/kaggle/MSAbypkl/data/data_pkl/valid_zh_pkl",
+        audio_dir=None
+        #audio_dir="video2pkl/video2pkl/en_audio"
     )
