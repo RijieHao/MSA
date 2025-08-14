@@ -1,7 +1,7 @@
 import torch
 import torch.nn as nn
 import torch.nn.functional as F
-
+from config import NUM_CLASSES
 class TextSentimentModel(nn.Module):
     """
     A feedforward neural network for text-based sentiment regression.
@@ -17,7 +17,7 @@ class TextSentimentModel(nn.Module):
     Forward Output:
         Tensor: Predicted sentiment score of shape (batch_size, 1)
     """
-    def __init__(self, input_dim, hidden_dim=256, dropout_rate=0.3, num_classes=5):
+    def __init__(self, input_dim, hidden_dim=256, dropout_rate=0.3, num_classes=NUM_CLASSES):
         super(TextSentimentModel, self).__init__()
         
         # Fully connected layers
@@ -76,7 +76,7 @@ class TransformerTextEncoder(nn.Module):
             - Encoded text representation of shape (batch_size, hidden_dim)
             - Sentiment score prediction of shape (batch_size, 1)
     """
-    def __init__(self, input_dim, hidden_dim=256, num_layers=4, num_heads=8, dropout_rate=0.3,num_classes = 5):
+    def __init__(self, input_dim, hidden_dim=256, num_layers=4, num_heads=8, dropout_rate=0.3,num_classes = NUM_CLASSES):
         super(TransformerTextEncoder, self).__init__()
         
         # Project input to transformer hidden dimension

@@ -233,24 +233,23 @@ def log_metrics(metrics, split, epoch=None):
         split (str): Dataset split ('train', 'val', 'test').
         epoch (int, optional): Epoch number (for training logs).
     """
-    """
-    epoch_str = f"Epoch {epoch} - " if epoch is not None else ""
-    logger.info(f"{epoch_str}{split.capitalize()} metrics:")
-    logger.info(f"  MAE: {metrics['mae']:.4f}")
-    logger.info(f"  Correlation: {metrics['corr']:.4f}")
-    logger.info(f"  Binary Accuracy: {metrics['binary_acc']:.4f}")
-    logger.info(f"  Binary F1: {metrics['binary_f1']:.4f}")
-    logger.info(f"  7-class Accuracy: {metrics['multiclass_acc']:.4f}")
-    logger.info(f"  7-class F1: {metrics['multiclass_f1']:.4f}")
-    """
-
-    epoch_str = f"Epoch {epoch} - " if epoch is not None else ""
-    logger.info(f"{epoch_str}{split.capitalize()} metrics:")
-    logger.info(f"  Accuracy: {metrics['accuracy']:.4f}")
-    logger.info(f"  F1 Score: {metrics['f1']:.4f}")
-    logger.info(f"  Precision: {metrics['precision']:.4f}")
-    logger.info(f"  Recall: {metrics['recall']:.4f}")
-    logger.info(f"  Batch Accuracy: {metrics['batch_accuracy']:.4f}")  # 输出总体准确率
+    if NUM_CLASSES == 1:
+        epoch_str = f"Epoch {epoch} - " if epoch is not None else ""
+        logger.info(f"{epoch_str}{split.capitalize()} metrics:")
+        logger.info(f"  MAE: {metrics['mae']:.4f}")
+        logger.info(f"  Correlation: {metrics['corr']:.4f}")
+        logger.info(f"  Binary Accuracy: {metrics['binary_acc']:.4f}")
+        logger.info(f"  Binary F1: {metrics['binary_f1']:.4f}")
+        logger.info(f"  7-class Accuracy: {metrics['multiclass_acc']:.4f}")
+        logger.info(f"  7-class F1: {metrics['multiclass_f1']:.4f}")
+    else:   
+        epoch_str = f"Epoch {epoch} - " if epoch is not None else ""
+        logger.info(f"{epoch_str}{split.capitalize()} metrics:")
+        logger.info(f"  Accuracy: {metrics['accuracy']:.4f}")
+        logger.info(f"  F1 Score: {metrics['f1']:.4f}")
+        logger.info(f"  Precision: {metrics['precision']:.4f}")
+        logger.info(f"  Recall: {metrics['recall']:.4f}")
+        logger.info(f"  Batch Accuracy: {metrics['batch_accuracy']:.4f}")  # 输出总体准确率
 
     # Log per-class metrics
     logger.info("  Classification Report:")

@@ -2,6 +2,7 @@ import torch
 import torch.nn as nn
 import torch.nn.functional as F
 import math
+from config import NUM_CLASSES
 
 class CrossAttention(nn.Module):
     """
@@ -94,7 +95,7 @@ class MultimodalCrossAttention(nn.Module):
         hidden_dim=256, 
         num_heads=8, 
         dropout_rate=0.1,
-        num_classes=5
+        num_classes=NUM_CLASSES
     ):
         super(MultimodalCrossAttention, self).__init__()
         

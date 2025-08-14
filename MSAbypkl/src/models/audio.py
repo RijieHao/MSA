@@ -1,6 +1,7 @@
 import torch
 import torch.nn as nn
 import torch.nn.functional as F
+from config import NUM_CLASSES
 
 class AudioSentimentModel(nn.Module):
     """
@@ -17,7 +18,7 @@ class AudioSentimentModel(nn.Module):
     Forward Output:
         Tensor: Predicted sentiment score of shape (batch_size, 1)
     """
-    def __init__(self, input_dim, hidden_dim=128, dropout_rate=0.3,num_classes = 5):
+    def __init__(self, input_dim, hidden_dim=128, dropout_rate=0.3,num_classes = NUM_CLASSES):
         super(AudioSentimentModel, self).__init__()
         
         # First fully connected layer
@@ -80,7 +81,7 @@ class TransformerAudioEncoder(nn.Module):
             - Encoded audio representation (batch_size, hidden_dim)
             - Sentiment score (batch_size, 1)
     """
-    def __init__(self, input_dim, hidden_dim=128, num_layers=2, num_heads=4, dropout_rate=0.3,num_classes = 5):
+    def __init__(self, input_dim, hidden_dim=128, num_layers=2, num_heads=4, dropout_rate=0.3,num_classes = NUM_CLASSES):
         super(TransformerAudioEncoder, self).__init__()
         
         # Input projection

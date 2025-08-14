@@ -1,6 +1,7 @@
 import torch
 import torch.nn as nn
 import torch.nn.functional as F
+from config import NUM_CLASSES
 
 class VisualSentimentModel(nn.Module):
     """
@@ -17,7 +18,7 @@ class VisualSentimentModel(nn.Module):
     Forward Output:
         Tensor: Predicted sentiment score of shape (batch_size, 1)
     """
-    def __init__(self, input_dim, hidden_dim=128, dropout_rate=0.3,num_classes=5):
+    def __init__(self, input_dim, hidden_dim=128, dropout_rate=0.3,num_classes=NUM_CLASSES):
         super(VisualSentimentModel, self).__init__()
         
         # Fully connected layers
@@ -76,7 +77,7 @@ class TransformerVisualEncoder(nn.Module):
             - Encoded visual representation of shape (batch_size, hidden_dim)
             - Sentiment score prediction of shape (batch_size, 1)
     """
-    def __init__(self, input_dim, hidden_dim=128, num_layers=2, num_heads=4, dropout_rate=0.3,num_classes = 5):
+    def __init__(self, input_dim, hidden_dim=128, num_layers=2, num_heads=4, dropout_rate=0.3,num_classes = NUM_CLASSES):
         super(TransformerVisualEncoder, self).__init__()
         
         # Project input features to hidden dimension

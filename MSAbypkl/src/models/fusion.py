@@ -1,6 +1,7 @@
 import torch
 import torch.nn as nn
 import torch.nn.functional as F
+from config import NUM_CLASSES
 
 class EarlyFusionModel(nn.Module):
     """
@@ -21,7 +22,7 @@ class EarlyFusionModel(nn.Module):
         visual_dim, 
         hidden_dim=256, 
         dropout_rate=0.3,
-        num_classes=5
+        num_classes=NUM_CLASSES
     ):
         super(EarlyFusionModel, self).__init__()
         
@@ -151,7 +152,7 @@ class TransformerFusionModel(nn.Module):
         num_heads=8, 
         num_layers=4, 
         dropout_rate=0.3,
-        num_classes=5   
+        num_classes=NUM_CLASSES
     ):
         super(TransformerFusionModel, self).__init__()
         
