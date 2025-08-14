@@ -148,22 +148,25 @@ def get_predictions(model, dataloader, device, output_csv_path=None):
             outputs = model(inputs)
             
             # Collect predictions and labels
-            #preds = outputs.squeeze().cpu().numpy()
-            preds = torch.argmax(outputs, dim=1).cpu().numpy()
-            labels = labels.cpu().numpy()
+            if NUM_CLASSES == 5:
+                preds = torch.argmax(outputs, dim=1).cpu().numpy()
+            else:
+                preds = outputs.squeeze().cpu().numpy()
             
+            labels = labels.cpu().numpy()
             
             # 添加 NaN 处理
             preds = np.where(np.isnan(preds), 0.0, preds)  # 将 NaN 替换为 0
             preds = np.where(np.isinf(preds), 0.0, preds)  # 将 Inf 替换为 0
             
-            all_preds.append(preds)
-            all_labels.append(labels)
-            all_ids.append(ids)
+            all_preds.extend(preds)
+            all_labels.extend(labels)
+            all_ids.extend(ids)
     
     # Concatenate batch results
-    all_preds = np.concatenate(all_preds)
-    all_labels = np.concatenate(all_labels)
+    all_preds = np.array(all_preds)
+    all_labels = np.array(all_labels)
+    all_ids = np.array(all_ids)
 
     if output_csv_path:
         with open(output_csv_path, mode="w", newline="") as csvfile:
@@ -237,11 +240,11 @@ def log_metrics(metrics, split, epoch=None):
         epoch_str = f"Epoch {epoch} - " if epoch is not None else ""
         logger.info(f"{epoch_str}{split.capitalize()} metrics:")
         logger.info(f"  MAE: {metrics['mae']:.4f}")
-        logger.info(f"  Correlation: {metrics['corr']:.4f}")
-        logger.info(f"  Binary Accuracy: {metrics['binary_acc']:.4f}")
-        logger.info(f"  Binary F1: {metrics['binary_f1']:.4f}")
-        logger.info(f"  7-class Accuracy: {metrics['multiclass_acc']:.4f}")
-        logger.info(f"  7-class F1: {metrics['multiclass_f1']:.4f}")
+        #logger.info(f"  Correlation: {metrics['corr']:.4f}")
+        #logger.info(f"  Binary Accuracy: {metrics['binary_acc']:.4f}")
+        #logger.info(f"  Binary F1: {metrics['binary_f1']:.4f}")
+        #logger.info(f"  7-class Accuracy: {metrics['multiclass_acc']:.4f}")
+        #logger.info(f"  7-class F1: {metrics['multiclass_f1']:.4f}")
     else:   
         epoch_str = f"Epoch {epoch} - " if epoch is not None else ""
         logger.info(f"{epoch_str}{split.capitalize()} metrics:")
@@ -252,7 +255,7 @@ def log_metrics(metrics, split, epoch=None):
         logger.info(f"  Batch Accuracy: {metrics['batch_accuracy']:.4f}")  # 输出总体准确率
 
     # Log per-class metrics
-    logger.info("  Classification Report:")
-    for label, report in metrics["classification_report"].items():
-        if isinstance(report, dict):  # Skip 'accuracy' key in classification_report
-            logger.info(f"    Class {label}: Precision={report['precision']:.4f}, Recall={report['recall']:.4f}, F1={report['f1-score']:.4f}")
+    #logger.info("  Classification Report:")
+    #for label, report in metrics["classification_report"].items():
+    #    if isinstance(report, dict):  # Skip 'accuracy' key in classification_report
+    #        logger.info(f"    Class {label}: Precision={report['precision']:.4f}, Recall={report['recall']:.4f}, F1={report['f1-score']:.4f}")

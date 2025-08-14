@@ -6,3 +6,4 @@ librosa
 opencv-python
 mediapipe
 scikit-image
+seaborn

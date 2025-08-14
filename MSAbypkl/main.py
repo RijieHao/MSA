@@ -135,6 +135,7 @@ def train_model():
     dataloaders = get_dataloaders(
         modalities=modalities, 
         batch_size=batch_size,
+        num_workers=0,
         #use_all_data=True
     )
 
@@ -301,6 +302,7 @@ def evaluate_model():
     dataloaders = get_dataloaders(
         modalities=modalities,
         batch_size=batch_size,
+        num_workers=0,
         #use_all_data=True
     )
     test_loader = dataloaders["test"]
@@ -340,7 +342,7 @@ def evaluate_model():
 
     # Run evaluation
     logger.info("Running evaluation on test set...")
-    predictions, targets = get_predictions(model=model, dataloader=test_loader, device=device)
+    predictions, targets = get_predictions(model=model, dataloader=test_loader, device=device, output_csv_path="MSAbypkl/logs/log.csv")
 
     # Compute and log metrics
     from src.training.metrics import evaluate_mosei

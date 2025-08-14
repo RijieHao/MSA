@@ -55,6 +55,7 @@ class MOSEIDataset(Dataset):
             0.8: 4,
             1: 4,
         }
+        
 
         # Validate provided modalities
 
@@ -123,10 +124,41 @@ class MOSEIDataset(Dataset):
                     if key not in merged_data:
                         merged_data[key] = value
                     else:
-                        merged_data[key].extend(value)
+                        if isinstance(merged_data[key], list):
+                            merged_data[key].extend(value)
+                        elif isinstance(merged_data[key], np.ndarray):
+                            merged_data[key] = np.concatenate((merged_data[key], value), axis=0)
             else:
                 logger.warning(f"Data file not found: {path}")
         return merged_data
+    def map_to_label3(self, value):
+        """
+        Map a continuous value to a label based on the following ranges:
+        -3 ~ -2 -> 0
+        -2 ~ -0.5 -> 1
+        -0.5 ~ 0.5 -> 2
+        0.5 ~ 2 -> 3
+        2 ~ 3 -> 4
+
+        Args:
+            value (float): The continuous value to map.
+
+        Returns:
+            int: The mapped label.
+        """
+        if -3 <= value < -2:
+            return 0
+        elif -2 <= value < -0.5:
+            return 1
+        elif -0.5 <= value < 0.5:
+            return 2
+        elif 0.5 <= value < 2:
+            return 3
+        elif 2 <= value <= 3:
+            return 4
+        else:
+            logger.warning(f"Value {value} is out of range for mapping")
+            return -1  # Return -1 for out-of-range values
 
     def __len__(self):
         """
@@ -185,7 +217,8 @@ class MOSEIDataset(Dataset):
                 sample["label"] = torch.tensor(self.data["regression_labels"][idx], dtype=torch.float32)
             elif NUM_CLASSES == 5:
                 regression_label = self.data["regression_labels"][idx]
-                mapped_label = self.label_mapping2.get(regression_label, -1)  # 映射到 label_mapping2
+                mapped_label = self.label_mapping2.get(regression_label, -1)
+                #mapped_label = self.label_mapping3.get(regression_label)   # 映射到 label_mapping2
                 if mapped_label == -1:
                     logger.warning(f"Unknown regression label '{regression_label}' for sample {idx}")
                 sample["label"] = torch.tensor(mapped_label, dtype=torch.long)  # 转为分类任务的整数标签

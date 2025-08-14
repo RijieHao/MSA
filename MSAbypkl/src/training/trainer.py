@@ -125,8 +125,11 @@ class Trainer:
             outputs = self.model(inputs)
             
             # Calculate loss
-            loss = self.criterion(outputs.squeeze(), labels.squeeze())
-            
+            if NUM_CLASSES == 5:
+                loss = self.criterion(outputs.squeeze(), labels.squeeze())
+            else:
+                loss = self.criterion(outputs.squeeze(), labels)
+
             # Backward pass and optimize
             loss.backward()
             self.optimizer.step()
