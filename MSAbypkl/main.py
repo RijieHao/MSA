@@ -15,7 +15,7 @@ from config import (
     TEXT_MAX_LENGTH, AUDIO_FEATURE_SIZE, VISUAL_FEATURE_SIZE,
     TEXT_EMBEDDING_DIM, SEED, DEVICE, EARLY_STOPPING_PATIENCE, GRADIENT_CLIP_VAL,
     BATCH_SIZE, LEARNING_RATE, WEIGHT_DECAY, NUM_EPOCHS, DROPOUT_RATE,
-    HIDDEN_DIM, NUM_ATTENTION_HEADS, NUM_TRANSFORMER_LAYERS
+    HIDDEN_DIM, NUM_ATTENTION_HEADS, NUM_TRANSFORMER_LAYERS, NUM_CLASSES
 )
 
 # Import necessary modules
@@ -153,7 +153,8 @@ def train_model():
         hidden_dim=hidden_dim,
         num_layers=num_layers,
         num_heads=num_heads,
-        dropout_rate=dropout
+        dropout_rate=dropout,
+        num_classes = NUM_CLASSES
     )
     model = model.to(device)
 
@@ -231,11 +232,14 @@ def train_model():
     # Plot prediction scatter plot
     predictions, targets = get_predictions(model=best_model, dataloader=dataloaders["test"], device=device)
     scatter_path = Path(log_dir) / "multimodal_predictions.png"
-    plot_confusion_matrix(targets, predictions, labels=["SNEG", "WNEG", "NEUT", "WPOS", "SPOS"], save_path=scatter_path)
-    #plot_scatter_predictions(
-    #    predictions, targets,
-    #    save_path=scatter_path,
-    #    title="Multimodal Sentiment Test Predictions vs Actual"
+    if NUM_CLASSES==1:
+        plot_scatter_predictions(
+            predictions, targets,
+            save_path=scatter_path,
+            title="Multimodal Sentiment Test Predictions vs Actual"
+        )
+    else:
+        plot_confusion_matrix(targets, predictions, labels=["SNEG", "WNEG", "NEUT", "WPOS", "SPOS"], save_path=scatter_path)
     #)
     logger.info(f"Prediction scatter plot saved to {scatter_path}")
     
@@ -317,7 +321,8 @@ def evaluate_model():
         hidden_dim=HIDDEN_DIM,
         num_layers=NUM_TRANSFORMER_LAYERS,
         num_heads=NUM_ATTENTION_HEADS,
-        dropout_rate=DROPOUT_RATE
+        dropout_rate=DROPOUT_RATE,
+        num_classes=NUM_CLASSES
     )
     model = model.to(device)
     logger.info("Model initialized.")
@@ -344,8 +349,10 @@ def evaluate_model():
 
     # Plot scatter predictions
     scatter_path = Path(log_dir) / "test_predictions.png"
-    plot_confusion_matrix(targets, predictions, labels=["SNEG", "WNEG", "NEUT", "WPOS", "SPOS"], save_path=scatter_path)
-    #plot_scatter_predictions(predictions, targets, save_path=scatter_path, title="Test Predictions vs Actual")
+    if NUM_CLASSES==1:
+        plot_scatter_predictions(predictions, targets, save_path=scatter_path, title="Test Predictions vs Actual")
+    else:
+        plot_confusion_matrix(targets, predictions, labels=["SNEG", "WNEG", "NEUT", "WPOS", "SPOS"], save_path=scatter_path)
     logger.info(f"Saved prediction scatter plot to {scatter_path}")
     
     logger.info("Evaluation complete!")

@@ -14,7 +14,7 @@ sys.path.append(str(Path(__file__).resolve().parents[2]))
 
 from src.training.metrics import evaluate_mosei, log_metrics
 from src.utils.logging import setup_logging
-from config import DEVICE, MODELS_DIR, LOGS_DIR
+from config import DEVICE, MODELS_DIR, LOGS_DIR,NUM_CLASSES
 
 # Get logger
 logger = logging.getLogger(__name__)
@@ -68,8 +68,11 @@ class Trainer:
             weight_decay=weight_decay
         )
 #-------------------------------修改回归为分类-----------------------------------------
-        #self.criterion = nn.MSELoss()
-        self.criterion = nn.CrossEntropyLoss()
+        # 动态选择损失函数
+        if NUM_CLASSES > 1:
+            self.criterion = nn.CrossEntropyLoss()  # 分类任务
+        else:
+            self.criterion = nn.MSELoss()  # 回归任务
 
         # Setup paths for saving models and logs
         self.model_dir = Path(model_dir) if model_dir is not None else Path(MODELS_DIR)
@@ -169,6 +172,12 @@ class Trainer:
                 outputs = self.model(inputs)
                 
                 # Calculate loss
+                if NUM_CLASSES > 1:
+                    loss = self.criterion(outputs, labels.long())
+                    preds = torch.argmax(outputs, dim=1).cpu().numpy()
+                else:
+                    loss = self.criterion(outputs.squeeze(), labels.float())
+                    preds = outputs.squeeze().cpu().numpy()
                 loss = self.criterion(outputs.squeeze(), labels.squeeze())
                 
                 # Update statistics
@@ -179,7 +188,6 @@ class Trainer:
                 #preds = outputs.argmax(dim=1).cpu().numpy()
                 #labels = labels.cpu().numpy()
 
-                preds = torch.argmax(outputs, dim=1).cpu().numpy()
                 labels = labels.cpu().numpy()
 
                 all_preds.append(preds)

@@ -6,7 +6,7 @@ from sklearn.metrics import mean_absolute_error, accuracy_score, f1_score,classi
 from scipy.stats import pearsonr
 import logging
 import csv
-
+from config import NUM_CLASSES
 logger = logging.getLogger(__name__)
 
 def calc_mae(preds, labels):
@@ -190,42 +190,38 @@ def evaluate_mosei(model, dataloader, device):
     all_preds, all_labels = get_predictions(model, dataloader, device)
     
     # Calculate metrics
+    if NUM_CLASSES > 1:
+        accuracy = accuracy_score(all_labels, all_preds)
+        f1 = f1_score(all_labels, all_preds, average="weighted")
+        precision = precision_score(all_labels, all_preds, average="weighted")
+        recall = recall_score(all_labels, all_preds, average="weighted")
+        class_report = classification_report(all_labels, all_preds, output_dict=True)
+        batch_correct = (all_preds == all_labels).sum()  # 预测正确的样本数
+        batch_total = len(all_labels)  # 总样本数
+        batch_accuracy = batch_correct / batch_total 
 
-    accuracy = accuracy_score(all_labels, all_preds)
-    f1 = f1_score(all_labels, all_preds, average="weighted")
-    precision = precision_score(all_labels, all_preds, average="weighted")
-    recall = recall_score(all_labels, all_preds, average="weighted")
-    class_report = classification_report(all_labels, all_preds, output_dict=True)
-    batch_correct = (all_preds == all_labels).sum()  # 预测正确的样本数
-    batch_total = len(all_labels)  # 总样本数
-    batch_accuracy = batch_correct / batch_total 
-    '''
-    下面是回归指标
-    mae = calc_mae(all_preds, all_labels)
-    corr = calc_correlation(all_preds, all_labels)
-    acc = calc_binary_accuracy(all_preds, all_labels)
-    f1 = calc_f1(all_preds, all_labels)
-    
-    # Multi-class metrics
-    multiclass_metrics = calc_multiclass_metrics(all_preds, all_labels)
-    
-    # Combine all metrics
-    metrics = {
-        "mae": mae,
-        "corr": corr,
-        "binary_acc": acc,
-        "binary_f1": f1,
-        **multiclass_metrics
-    }
-    '''
-    metrics = {
+        metrics = {
         "accuracy": accuracy,
         "f1": f1,
         "precision": precision,
         "recall": recall,
         "batch_accuracy": batch_accuracy,
         "classification_report": class_report
-    }
+        }
+    else:
+    #下面是回归指标
+        mae = calc_mae(all_preds, all_labels)
+        corr = calc_correlation(all_preds, all_labels)
+        acc = calc_binary_accuracy(all_preds, all_labels)
+        f1 = calc_f1(all_preds, all_labels)
+        # Combine all metrics
+        metrics = {
+            "mae": mae,
+            "corr": corr,
+            "binary_acc": acc,
+            "binary_f1": f1,
+        }
+
     return metrics
 
 def log_metrics(metrics, split, epoch=None):

@@ -61,43 +61,6 @@ def plot_training_curves(train_losses, val_losses, metrics=None, save_path=None)
     
     plt.show()
 
-def plot_confusion_matrix(y_true, y_pred, labels=None, save_path=None):
-    """
-    Plots the confusion matrix for sentiment predictions.
-
-    Args:
-        y_true (list or np.ndarray): Ground truth sentiment values.
-        y_pred (list or np.ndarray): Predicted sentiment values.
-        labels (list[str], optional): Class labels.
-        save_path (str, optional): Path to save the plot as a file.
-    """
-    # Convert continuous sentiment to binary or categorical if needed
-    if labels is None:
-        # Binary sentiment (positive/negative)
-        y_true_bin = [1 if y > 0 else 0 for y in y_true]
-        y_pred_bin = [1 if y > 0 else 0 for y in y_pred]
-        labels = ["Negative", "Positive"]
-    else:
-        y_true_bin = y_true
-        y_pred_bin = y_pred
-    
-    # Compute confusion matrix
-    cm = confusion_matrix(y_true_bin, y_pred_bin)
-    
-    # Plot confusion matrix
-    plt.figure(figsize=(8, 8))
-    disp = ConfusionMatrixDisplay(confusion_matrix=cm, display_labels=labels)
-    disp.plot(cmap=plt.cm.Blues, values_format="d")
-    plt.title("Sentiment Classification Confusion Matrix")
-    plt.tight_layout()
-    
-    # Save figure if path is provided
-    if save_path:
-        plt.savefig(save_path, dpi=300, bbox_inches="tight")
-        print(f"Confusion matrix saved to {save_path}")
-    
-    plt.show()
-
 def plot_scatter_predictions(y_pred, y_true, save_path=None, title=None):
     """
     Plots a scatter plot comparing true vs. predicted sentiment values.

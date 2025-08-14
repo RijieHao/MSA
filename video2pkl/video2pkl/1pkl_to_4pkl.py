@@ -7,8 +7,8 @@ AUDIO_FEATURE_SIZE = 40
 VISUAL_FEATURE_SIZE = 35
 SEED = 42
 # 配置路径
-input_pkl_path = "MSA_get_pkl/test_pkl/train_data.pkl"  # 替换为你的输入 .pkl 文件路径
-output_dir = "Multimodal-Sentiment-Analysis-with-MOSEI-Dataset\data\processed\CMU_MOSEI"   # 替换为输出文件夹路径
+input_pkl_path = "E:/kaggle/MSAbypkl/unaligned_en.pkl"  # 替换为你的输入 pkl 文件路径
+output_dir = "E:/kaggle/MSAbypkl/data/data_pkl/unaligned_en_pkl"   # 替换为输出文件夹路径
 os.makedirs(output_dir, exist_ok=True)
 
 # 加载原始 .pkl 文件

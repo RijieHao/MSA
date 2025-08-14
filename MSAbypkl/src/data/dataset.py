@@ -13,7 +13,7 @@ sys.path.append(str(Path(__file__).resolve().parents[2]))
 # Import configuration variables
 from config import (
     PROCESSED_DATA_DIR, DATASET_NAME, BATCH_SIZE,
-    TEXT_EMBEDDING_DIM, AUDIO_FEATURE_SIZE, VISUAL_FEATURE_SIZE
+    TEXT_EMBEDDING_DIM, AUDIO_FEATURE_SIZE, VISUAL_FEATURE_SIZE, NUM_CLASSES
 )
 
 # Set up logging configuration
@@ -44,6 +44,7 @@ class MOSEIDataset(Dataset):
         }
 
         # Validate provided modalities
+
         for modality in self.modalities:
             if modality not in ["text", "audio", "vision"]:
                 raise ValueError(f"Invalid modality: {modality}")
@@ -62,6 +63,7 @@ class MOSEIDataset(Dataset):
             self.data = self._load_and_merge_data([test_path])
         else:
             # 正常加载指定 split 的数据
+
             self.data_path = base_path / f"{split}_data.pkl"
             if not self.data_path.exists():
                 raise FileNotFoundError(
@@ -87,12 +89,14 @@ class MOSEIDataset(Dataset):
 
         # Check if required fields are present
         #optional_fields = ["labels", "id", "language","class_labels"]
-        optional_fields = ["id", "class_labels","language"]
+        optional_fields = ["id", "class_labels","language","regression_labels"]
         for field in optional_fields:
             if field not in self.data:
                 logger.warning(f"Optional field '{field}' not found in data")
-
-        self.num_samples = len(self.data["class_labels"])
+        if "class_labels" in self.data:
+            self.num_samples = len(self.data["class_labels"])
+        elif "regression_labels" in self.data:
+            self.num_samples = len(self.data["regression_labels"])
         logger.info(f"Loaded {self.num_samples} samples for {split} split")
 
     def _load_and_merge_data(self, paths):
@@ -152,6 +156,8 @@ class MOSEIDataset(Dataset):
                 sample["label"] = label_idx
             else:
                 sample["label"] = label_idx
+        elif "regression_labels" in self.data:
+            sample["label"] = torch.tensor(self.data["regression_labels"][idx], dtype=torch.float32)
 
         # Load label
         #if "labels" in self.data:
