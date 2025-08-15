@@ -1,0 +1,69 @@
+"""
+Configuration and path management script for the multimodal sentiment analysis project.
+Defines directory structure, dataset parameters, model hyperparameters, and training settings.
+"""
+
+import os
+from pathlib import Path
+import torch
+
+# Root directory of the project
+ROOT_DIR = Path(os.path.dirname(os.path.abspath(__file__)))
+
+# Source code directories
+SRC_DIR = ROOT_DIR / "src"
+DATA_SRC_DIR = SRC_DIR / "data"  # Data processing scripts
+MODELS_SRC_DIR = SRC_DIR / "models"  # Model architecture definitions
+UTILS_SRC_DIR = SRC_DIR / "utils"  # Utility functions (e.g., metrics, visualization)
+
+# Model weights and training logs
+MODELS_DIR = ROOT_DIR / "models"  # Saved model checkpoints
+LOGS_DIR = ROOT_DIR / "logs"  # Training and evaluation logs
+
+
+# Maximum length for text sequences (BERT input)
+TEXT_MAX_LENGTH = 128
+
+# Feature dimensions for each modality
+AUDIO_FEATURE_SIZE = 40#un_zh:25 ,normal:40     # Number of MFCC features per audio frame
+VISUAL_FEATURE_SIZE = 35 #un_zh:177;normal:46;noraml2:35     # Number of facial landmark points or visual features
+
+# Dimensionality of the BERT-based text embeddings
+TEXT_EMBEDDING_DIM = 768
+
+# Hidden layer size used in fusion layers and encoders
+HIDDEN_DIM = 256
+
+# Transformer-specific settings
+NUM_ATTENTION_HEADS = 8
+NUM_TRANSFORMER_LAYERS = 4
+
+# Dropout rate for regularization
+DROPOUT_RATE = 0.3
+
+# Random seed for reproducibility
+SEED = 42
+
+# Batch size used for training
+BATCH_SIZE = 32
+
+# Learning rate for optimizer
+LEARNING_RATE = 1e-4
+
+# Weight decay (L2 regularization)
+WEIGHT_DECAY = 1e-5
+
+# Total number of training epochs
+NUM_EPOCHS = 20
+
+# Patience for early stopping
+EARLY_STOPPING_PATIENCE = 10
+
+# Gradient clipping threshold to avoid exploding gradients
+GRADIENT_CLIP_VAL = 1.0
+
+# Number of classes for classification task
+NUM_CLASSES = 1  #1代表回归任务,5代表5分类任务
+
+# Automatically choose the best available device: MPS (Apple Silicon), CUDA (NVIDIA GPU), or CPU
+DEVICE = "cuda" if torch.cuda.is_available() else "cpu" 

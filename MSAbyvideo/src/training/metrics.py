@@ -2,7 +2,7 @@ import numpy as np
 import torch
 import torch.nn.functional as F
 from sklearn.metrics import mean_absolute_error, accuracy_score, f1_score,classification_report, precision_score, recall_score
-import os
+
 from scipy.stats import pearsonr
 import logging
 import csv
@@ -169,7 +169,6 @@ def get_predictions(model, dataloader, device, output_csv_path=None):
     all_ids = np.array(all_ids)
 
     if output_csv_path:
-        os.makedirs(os.path.dirname(output_csv_path), exist_ok=True)
         with open(output_csv_path, mode="w", newline="") as csvfile:
             writer = csv.writer(csvfile)
             writer.writerow(["id", "predicted_class", "true_class"])
@@ -197,33 +196,19 @@ def evaluate_mosei(model, dataloader, device):
     if NUM_CLASSES > 1:
         accuracy = accuracy_score(all_labels, all_preds)
         f1 = f1_score(all_labels, all_preds, average="weighted")
-        precision = precision_score(all_labels, all_preds, average="weighted")
-        recall = recall_score(all_labels, all_preds, average="weighted")
-        class_report = classification_report(all_labels, all_preds, output_dict=True)
-        batch_correct = (all_preds == all_labels).sum()  # 预测正确的样本数
-        batch_total = len(all_labels)  # 总样本数
-        batch_accuracy = batch_correct / batch_total 
 
         metrics = {
         "accuracy": accuracy,
         "f1": f1,
-        "precision": precision,
-        "recall": recall,
-        "batch_accuracy": batch_accuracy,
-        "classification_report": class_report
         }
     else:
     #下面是回归指标
         mae = calc_mae(all_preds, all_labels)
         corr = calc_correlation(all_preds, all_labels)
-        acc = calc_binary_accuracy(all_preds, all_labels)
-        f1 = calc_f1(all_preds, all_labels)
         # Combine all metrics
         metrics = {
             "mae": mae,
             "corr": corr,
-            "binary_acc": acc,
-            "binary_f1": f1,
         }
 
     return metrics
@@ -241,11 +226,6 @@ def log_metrics(metrics, split, epoch=None):
         epoch_str = f"Epoch {epoch} - " if epoch is not None else ""
         logger.info(f"{epoch_str}{split.capitalize()} metrics:")
         logger.info(f"  MAE: {metrics['mae']:.4f}")
-        #logger.info(f"  Correlation: {metrics['corr']:.4f}")
-        #logger.info(f"  Binary Accuracy: {metrics['binary_acc']:.4f}")
-        #logger.info(f"  Binary F1: {metrics['binary_f1']:.4f}")
-        #logger.info(f"  7-class Accuracy: {metrics['multiclass_acc']:.4f}")
-        #logger.info(f"  7-class F1: {metrics['multiclass_f1']:.4f}")
     else:   
         epoch_str = f"Epoch {epoch} - " if epoch is not None else ""
         logger.info(f"{epoch_str}{split.capitalize()} metrics:")
@@ -254,9 +234,3 @@ def log_metrics(metrics, split, epoch=None):
         logger.info(f"  Precision: {metrics['precision']:.4f}")
         logger.info(f"  Recall: {metrics['recall']:.4f}")
         logger.info(f"  Batch Accuracy: {metrics['batch_accuracy']:.4f}")  # 输出总体准确率
-
-    # Log per-class metrics
-    #logger.info("  Classification Report:")
-    #for label, report in metrics["classification_report"].items():
-    #    if isinstance(report, dict):  # Skip 'accuracy' key in classification_report
-    #        logger.info(f"    Class {label}: Precision={report['precision']:.4f}, Recall={report['recall']:.4f}, F1={report['f1-score']:.4f}")

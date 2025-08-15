@@ -14,6 +14,8 @@ video2pkl/video2pkl/mix_video/
 video2pkl/video2pkl/en_audio/
 video2pkl/video2pkl/*.zip
 MSAbypkl/data/data_pkl/
+best_models/
+video2pkl/*.csv
 # VS Code
 .vscode/
 *.code-workspace

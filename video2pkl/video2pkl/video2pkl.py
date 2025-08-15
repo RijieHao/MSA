@@ -14,6 +14,8 @@ import mediapipe as mp
 import torch
 from scipy.signal import find_peaks
 from skimage.feature import hog
+import torchaudio
+
 
 # 配置参数
 TEXT_EMBEDDING_DIM = 768
@@ -27,7 +29,7 @@ class MOSEIExtractor:
         self.device = "cuda" if torch.cuda.is_available() else "cpu"
 
         # 初始化 Whisper 模型
-        self.whisper_model = whisper.load_model("base")
+        self.whisper_model = whisper.load_model("base").to(self.device)
 
         # 初始化 BERT 模型
          # ===== 加载英文 BERT =====
