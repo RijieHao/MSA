@@ -124,6 +124,13 @@ def get_predictions(model, dataloader, device, output_csv_path=None):
     Returns:
         tuple: (np.ndarray of predictions, np.ndarray of labels, list of IDs)
     """
+    reverse_label_mapping = {
+        0: "SNEG",
+        1: "WNEG",
+        2: "NEUT",
+        3: "WPOS",
+        4: "SPOS"
+    }
     model.eval()
     all_preds = []
     all_labels = []
@@ -172,9 +179,11 @@ def get_predictions(model, dataloader, device, output_csv_path=None):
         os.makedirs(os.path.dirname(output_csv_path), exist_ok=True)
         with open(output_csv_path, mode="w", newline="") as csvfile:
             writer = csv.writer(csvfile)
-            writer.writerow(["id", "predicted_class", "true_class"])
-            for id_, pred, label in zip(all_ids, all_preds, all_labels):
-                writer.writerow([id_, pred, label])
+            writer.writerow(["ID", "Label"])  # 修改列名
+            for id_, pred in zip(all_ids, all_preds):
+                # 对 pred 进行反映射
+                mapped_label = reverse_label_mapping.get(int(pred), "UNKNOWN")
+                writer.writerow([id_, mapped_label])
         print(f"Results saved to {output_csv_path}")
 
     return all_preds, all_labels

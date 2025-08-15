@@ -8,7 +8,7 @@ import torch.nn as nn
 import torch.optim as optim
 from pathlib import Path
 from tqdm import tqdm
-
+from src.models.fusion import TransformerFusionModel
 # Add project root to system path for module resolution
 sys.path.append(str(Path(__file__).resolve().parents[2]))
 
@@ -43,6 +43,8 @@ class Trainer:
         train_loader,
         val_loader,
         test_loader=None,
+        zh_model_path=None,  # 中文模型权重路径
+        en_model_path=None,  # 英文模型权重路径
         lr=1e-4,
         weight_decay=1e-5,
         device=None,
@@ -74,6 +76,16 @@ class Trainer:
         else:
             self.criterion = nn.MSELoss()  # 回归任务
 
+        self.zh_model_path = zh_model_path
+        self.en_model_path = en_model_path
+        self.zh_model = None
+        self.en_model = None
+
+        if zh_model_path:
+            self.zh_model = self._load_model(zh_model_path)
+        if en_model_path:
+            self.en_model = self._load_model(en_model_path)
+
         # Setup paths for saving models and logs
         self.model_dir = Path(model_dir) if model_dir is not None else Path(MODELS_DIR)
         self.model_dir.mkdir(exist_ok=True, parents=True)
@@ -95,7 +107,26 @@ class Trainer:
         self.best_val_loss = float("inf")
         self.best_epoch = 0
         self.patience_counter = 0
-    
+        
+    def _load_model(self, model_path):
+        """
+        Load a model from the specified path.
+        """
+        model = TransformerFusionModel(
+            text_dim=TEXT_EMBEDDING_DIM,
+            audio_dim=AUDIO_FEATURE_SIZE,
+            visual_dim=VISUAL_FEATURE_SIZE,
+            hidden_dim=HIDDEN_DIM,
+            num_layers=NUM_TRANSFORMER_LAYERS,
+            num_heads=NUM_ATTENTION_HEADS,
+            dropout_rate=DROPOUT_RATE,
+            num_classes=NUM_CLASSES
+        )
+        model.load_state_dict(torch.load(model_path, map_location=self.device)["model_state_dict"])
+        model = model.to(self.device)
+        model.eval()
+        return model
+
     def train_epoch(self, epoch):
         """
         Train the model for a single epoch.

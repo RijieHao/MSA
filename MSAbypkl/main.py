@@ -94,8 +94,8 @@ def train_model():
         device = DEVICE
     else:
         device = device.lower()
-    if device not in ["mps", "cuda", "cpu", "auto"]:
-        logger.error("Invalid device. Please enter 'mps', 'cuda', or 'cpu'.")
+    if device not in ["cuda", "cpu", "auto"]:
+        logger.error("Invalid device. Please enter  'cuda', or 'cpu'.")
         return
     if device == "auto":
         device = DEVICE
@@ -176,7 +176,7 @@ def train_model():
         checkpoint_path = Path(checkpoint)
         if checkpoint_path.exists():
             logger.info(f"Loading checkpoint from {checkpoint_path}")
-            check = torch.load(checkpoint_path)
+            check = torch.load(checkpoint_path, map_location=torch.device('cpu'))
             model.load_state_dict(check["model_state_dict"])
             optimizer.load_state_dict(check["optimizer_state_dict"])
             start_epoch = check["epoch"] + 1

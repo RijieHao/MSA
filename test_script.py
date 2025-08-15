@@ -5,7 +5,7 @@ from pathlib import Path
 from video2pkl.video2pkl.video2pkl import MOSEIExtractor
 
 def generate_csv(video_dir, output_csv):
-    """生成 CSV 文件"""
+    """从 Test_Data 文件夹生成 CSV 文件"""
     with open(output_csv, mode='w', newline='', encoding='utf-8') as file:
         writer = csv.writer(file)
         # 写入表头
@@ -14,27 +14,15 @@ def generate_csv(video_dir, output_csv):
         for video_file in os.listdir(video_dir):
             if video_file.endswith(".mp4"):
                 video_name = os.path.splitext(video_file)[0]  # 去掉后缀
-                writer.writerow([video_dir, video_name, -1, "test", "WENG"])
-
-def update_config(dataset_name):
-    """更新 MSAbypkl/config.py 中的 DATASET_NAME"""
-    config_path = Path("e:/kaggle/MSAbypkl/config.py")
-    with open(config_path, "r", encoding="utf-8") as file:
-        lines = file.readlines()
-    with open(config_path, "w", encoding="utf-8") as file:
-        for line in lines:
-            if line.startswith("DATASET_NAME"):
-                file.write(f'DATASET_NAME = "{dataset_name}"\n')
-            else:
-                file.write(line)
+                writer.writerow([video_dir, video_name, -1, "test", "NEUT"])
 
 def main():
     # 视频文件夹路径
-    video_dir = "path_to_your_video_folder"  # 替换为你的视频文件夹路径
+    video_dir = "Test_Data"  # Test_Data 文件夹路径
     # 生成的 CSV 文件路径
-    output_csv = "generated_test.csv"
+    output_csv = "test_data.csv"
     # 生成的 .pkl 文件输出目录
-    output_pkl_dir = "e:/kaggle/MSAbypkl/data/data_pkl/test_generated_pkl"
+    output_pkl_dir = "e:/kaggle/MSAbypkl/data/data_pkl/test_pkl"
 
     # 生成 CSV 文件
     generate_csv(video_dir, output_csv)
@@ -51,14 +39,25 @@ def main():
     )
     print(f"特征提取完成，pkl 文件已生成到: {output_pkl_dir}")
 
-    # 更新 config.py 中的 DATASET_NAME
-    dataset_name = f"data/data_pkl/test_generated_pkl"
-    update_config(dataset_name)
-    print(f"已更新 MSAbypkl/config.py 中的 DATASET_NAME 为: {dataset_name}")
+    # 运行 MSAbypkl\main.py 并选择模型评估
+    main_script = "e:/kaggle/MSAbypkl/main.py"
+    model_checkpoint = "best_models/en.pt"
+    output_csv_path = "Test_Results/label_prediction.csv"
 
-    # 运行 MSAbypkl/main.py
-    print("开始运行 MSAbypkl/main.py...")
-    subprocess.run(["python", "e:/kaggle/MSAbypkl/main.py"], check=True)
+    # 确保输出目录存在
+    os.makedirs(os.path.dirname(output_csv_path), exist_ok=True)
+
+    # 使用 subprocess 调用 main.py 并传递参数
+    subprocess.run(
+        [
+            "python", main_script,
+            "--choice", "2",  # 选择评估模式
+            "--checkpoint", model_checkpoint,  # 模型权重路径
+            "--output_csv", output_csv_path  # 固定 CSV 输出路径
+        ],
+        check=True
+    )
+    print(f"模型评估完成，结果已保存到: {output_csv_path}")
 
 if __name__ == "__main__":
     main()

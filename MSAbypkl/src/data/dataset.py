@@ -70,12 +70,13 @@ class MOSEIDataset(Dataset):
         test_path = base_path / "test_data.pkl"
 
 
+
         if use_all_data and split == "train":
             # 合并 train, valid, test 数据
             self.data = self._load_and_merge_data([train_path, valid_path, test_path])
         elif force_test_mode and split in ["test"]:
             # 强制按 test 模式读取
-            self.data = self._load_and_merge_data([valid_path])
+            self.data = self._load_and_merge_data([test_path])
         else:
             # 正常加载指定 split 的数据
 
@@ -104,7 +105,7 @@ class MOSEIDataset(Dataset):
 
         # Check if required fields are present
         #optional_fields = ["labels", "id", "language","class_labels"]
-        optional_fields = ["id", "class_labels","language","regression_labels"]
+        optional_fields = ["id", "class_labels","language"]
         for field in optional_fields:
             if field not in self.data:
                 logger.warning(f"Optional field '{field}' not found in data")

@@ -31,7 +31,7 @@ for directory in [ SRC_DIR, DATA_SRC_DIR, PROCESSED_DATA_DIR,
     directory.mkdir(exist_ok=True, parents=True)
 
 # Dataset identifier
-DATASET_NAME = "valid_en_pkl"
+DATASET_NAME = "test_pkl"
 
 # URL for downloading the CMU-MOSEI dataset
 DATASET_URL = "http://immortal.multicomp.cs.cmu.edu/CMU-MOSEI/"
@@ -81,4 +81,4 @@ GRADIENT_CLIP_VAL = 1.0
 NUM_CLASSES = 5  #1代表回归任务,5代表5分类任务
 
 # Automatically choose the best available device: MPS (Apple Silicon), CUDA (NVIDIA GPU), or CPU
-DEVICE = "mps" if torch.backends.mps.is_available() else "cuda" if torch.cuda.is_available() else "cpu" 
+DEVICE = "cuda" if torch.cuda.is_available() else "cpu" 
