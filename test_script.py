@@ -14,7 +14,7 @@ def generate_csv(video_dir, output_csv):
         for video_file in os.listdir(video_dir):
             if video_file.endswith(".mp4"):
                 video_name = os.path.splitext(video_file)[0]  # 去掉后缀
-                writer.writerow([video_dir, video_name, -1, "test", "NEUT"])
+                writer.writerow(["", video_name, -1, "test", "NEUT"])
 
 def main():
     # 视频文件夹路径
@@ -22,7 +22,7 @@ def main():
     # 生成的 CSV 文件路径
     output_csv = "test_data.csv"
     # 生成的 .pkl 文件输出目录
-    output_pkl_dir = "e:/kaggle/MSAbypkl/data/data_pkl/test_pkl"
+    output_pkl_dir = "MSAbypkl/data/data_pkl/test_pkl"
 
     # 生成 CSV 文件
     generate_csv(video_dir, output_csv)
@@ -40,7 +40,7 @@ def main():
     print(f"特征提取完成，pkl 文件已生成到: {output_pkl_dir}")
 
     # 运行 MSAbypkl\main.py 并选择模型评估
-    main_script = "e:/kaggle/MSAbypkl/main.py"
+    main_script = "MSAbypkl/main.py"
     model_checkpoint = "best_models/en.pt"
     output_csv_path = "Test_Results/label_prediction.csv"
 
@@ -52,8 +52,6 @@ def main():
         [
             "python", main_script,
             "--choice", "2",  # 选择评估模式
-            "--checkpoint", model_checkpoint,  # 模型权重路径
-            "--output_csv", output_csv_path  # 固定 CSV 输出路径
         ],
         check=True
     )

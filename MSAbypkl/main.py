@@ -8,6 +8,7 @@ import time
 import torch
 import torch.nn as nn
 import torch.optim as optim
+import csv
 
 # Import global configurations
 from config import (
@@ -251,75 +252,53 @@ def train_model():
 
 def evaluate_model():
     """
-    Handle model evaluation workflow.
-
-    This function:
-    1. Loads a trained model from checkpoint
-    2. Prepares test data
-    3. Runs evaluation on test set
-    4. Computes and logs metrics
-    5. Visualizes predictions
-
-    All parameters are configurable through interactive prompts.
+    Handle model evaluation workflow with pre-configured parameters.
+    Automatically selects models based on language.
     """
-    # Setup logging with user-specified directory
-    log_dir = input("Enter log directory (default: logs/): ").strip() or LOGS_DIR
+    # 设置日志目录
+    log_dir = LOGS_DIR
     logger = setup_logging(log_dir)
     logger.info("\nStarting evaluation...")
 
-    # Get required checkpoint path
-    checkpoint = input("Enter the path to the model checkpoint (.pt): ").strip()
-    if not checkpoint:
-        logger.error("Checkpoint path is required for evaluation.")
-        return
+    # 设置模型权重路径
+    zh_checkpoint = "best_models/zh.pt"  # 中文模型权重
+    en_checkpoint = "best_models/en.pt"  # 英文模型权重
 
-    # Collect evaluation parameters
-    modalities = input("Enter modalities (default: text,audio,vision): ").strip() or "text,audio,vision"
-    batch_size = input("Enter batch size (default: 32): ").strip() or BATCH_SIZE
-    
-    # Validate and set device
-    device = input("Enter device (cuda/mps/cpu/default: auto): ").strip()
-    if not device:
-        device = DEVICE
-    else:
-        device = device.lower()
-    if device not in ["mps", "cuda", "cpu", "auto"]:
-        logger.error("Invalid device. Please enter 'mps', 'cuda', or 'cpu'.")
-        return
-    if device == "auto":
-        device = DEVICE
+    # 设置设备
+    device = DEVICE
 
-    # Get modalities to use
-    modalities = modalities.split(",")
+    # 设置数据模态和批量大小
+    modalities = ["text", "audio", "vision"]
+    batch_size = BATCH_SIZE
 
-    # Log evaluation parameters
+    # 日志记录
     logger.info("Hyperparameters set.")
     logger.info(f"Using device: {device}")
     logger.info(f"Batch size: {batch_size}")
     logger.info(f"Modalities: {modalities}")
-    logger.info(f"Checkpoint: {checkpoint}")
+    logger.info(f"Chinese checkpoint: {zh_checkpoint}")
+    logger.info(f"English checkpoint: {en_checkpoint}")
     logger.info(f"Log directory: {log_dir}")
 
-    # Load data
+    # 加载数据
     dataloaders = get_dataloaders(
         modalities=modalities,
         batch_size=batch_size,
         num_workers=0,
-        #use_all_data=True,
         force_test_mode=True
     )
     test_loader = dataloaders["test"]
     logger.info("Data loaded.")
 
-    # Define input dimensions
+    # 定义输入维度
     input_dims = {
         "language": TEXT_EMBEDDING_DIM,
         "acoustic": AUDIO_FEATURE_SIZE,
         "visual": VISUAL_FEATURE_SIZE
     }
 
-    # Initialize model
-    model = TransformerFusionModel(
+    # 初始化模型
+    zh_model = TransformerFusionModel(
         text_dim=input_dims["language"],
         audio_dim=input_dims["acoustic"],
         visual_dim=input_dims["visual"],
@@ -328,38 +307,84 @@ def evaluate_model():
         num_heads=NUM_ATTENTION_HEADS,
         dropout_rate=DROPOUT_RATE,
         num_classes=NUM_CLASSES
-    )
-    model = model.to(device)
-    logger.info("Model initialized.")
+    ).to(device)
 
-    # Load checkpoint
-    checkpoint_path = Path(checkpoint)
-    if not checkpoint_path.exists():
-        logger.error(f"Checkpoint not found: {checkpoint_path}")
-        return
+    en_model = TransformerFusionModel(
+        text_dim=input_dims["language"],
+        audio_dim=input_dims["acoustic"],
+        visual_dim=input_dims["visual"],
+        hidden_dim=HIDDEN_DIM,
+        num_layers=NUM_TRANSFORMER_LAYERS,
+        num_heads=NUM_ATTENTION_HEADS,
+        dropout_rate=DROPOUT_RATE,
+        num_classes=NUM_CLASSES
+    ).to(device)
 
-    logger.info(f"Loading model from checkpoint: {checkpoint_path}")
-    check = torch.load(checkpoint_path, map_location=device)
-    model.load_state_dict(check["model_state_dict"])
-    model.eval()
+    # 加载模型权重
+    logger.info(f"Loading Chinese model from checkpoint: {zh_checkpoint}")
+    zh_checkpoint_data = torch.load(zh_checkpoint, map_location=device)
+    zh_model.load_state_dict(zh_checkpoint_data["model_state_dict"])
+    zh_model.eval()
 
-    # Run evaluation
+    logger.info(f"Loading English model from checkpoint: {en_checkpoint}")
+    en_checkpoint_data = torch.load(en_checkpoint, map_location=device)
+    en_model.load_state_dict(en_checkpoint_data["model_state_dict"])
+    en_model.eval()
+
+    # 运行评估
     logger.info("Running evaluation on test set...")
-    predictions, targets = get_predictions(model=model, dataloader=test_loader, device=device, output_csv_path="MSAbypkl/logs/log.csv")
+    all_preds = []
+    all_labels = []
+    all_ids = []
 
-    # Compute and log metrics
-    from src.training.metrics import evaluate_mosei
-    test_metrics = evaluate_mosei(model, test_loader, device)
-    log_metrics(test_metrics, split="test")
+    with torch.no_grad():
+        for batch in test_loader:
+            # 获取批次数据
+            if isinstance(batch, dict):
+                inputs = {k: v.to(device) for k, v in batch.items() if k in ["text", "audio", "vision"]}
+                labels = batch["label"].to(device)
+                ids = batch["id"]
+                language = batch["language"]  # 获取语言属性
+            else:
+                inputs, labels, ids, language = batch
+                inputs = inputs.to(device)
+                labels = labels.to(device)
 
-    # Plot scatter predictions
-    scatter_path = Path(log_dir) / "test_predictions.png"
-    #if NUM_CLASSES==1:
-    #    plot_scatter_predictions(predictions, targets, save_path=scatter_path, title="Test Predictions vs Actual")
-    #else:
-    #    plot_confusion_matrix(targets, predictions, labels=["SNEG", "WNEG", "NEUT", "WPOS", "SPOS"], save_path=scatter_path)
-    logger.info(f"Saved prediction scatter plot to {scatter_path}")
-    
+            # 根据语言选择模型
+            if language == "zh":
+                outputs = zh_model(inputs)
+            elif language == "en":
+                outputs = en_model(inputs)
+            else:
+                logger.warning(f"Unknown language '{language}' for batch. Skipping...")
+                continue
+
+            # 收集预测和标签
+            if NUM_CLASSES == 5:
+                preds = torch.argmax(outputs, dim=1).cpu().numpy()
+            else:
+                preds = outputs.squeeze().cpu().numpy()
+
+            labels = labels.cpu().numpy()
+            all_preds.extend(preds)
+            all_labels.extend(labels)
+            all_ids.extend(ids)
+
+    # 保存预测结果到 CSV
+    output_csv_path = "Test_Results/label_prediction.csv"
+    os.makedirs(os.path.dirname(output_csv_path), exist_ok=True)
+    with open(output_csv_path, mode="w", newline="") as csvfile:
+        writer = csv.writer(csvfile)
+        writer.writerow(["ID", "Label"])
+        for id_, pred in zip(all_ids, all_preds):
+            writer.writerow([id_, pred])
+    logger.info(f"Predictions saved to {output_csv_path}")
+
+    # 计算并记录指标
+    #from src.training.metrics import evaluate_mosei
+    #test_metrics = evaluate_mosei(zh_model, test_loader, device)  # 使用中文模型计算指标
+    #log_metrics(test_metrics, split="test")
+
     logger.info("Evaluation complete!")
 
 def visualize_results():

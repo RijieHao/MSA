@@ -9,6 +9,13 @@ import torch.optim as optim
 from pathlib import Path
 from tqdm import tqdm
 from src.models.fusion import TransformerFusionModel
+from config import (
+    RAW_DATA_DIR, DATASET_NAME, DATASET_URL, PROCESSED_DATA_DIR, LOGS_DIR, MODELS_DIR,
+    TEXT_MAX_LENGTH, AUDIO_FEATURE_SIZE, VISUAL_FEATURE_SIZE,
+    TEXT_EMBEDDING_DIM, SEED, DEVICE, EARLY_STOPPING_PATIENCE, GRADIENT_CLIP_VAL,
+    BATCH_SIZE, LEARNING_RATE, WEIGHT_DECAY, NUM_EPOCHS, DROPOUT_RATE,
+    HIDDEN_DIM, NUM_ATTENTION_HEADS, NUM_TRANSFORMER_LAYERS, NUM_CLASSES
+)
 # Add project root to system path for module resolution
 sys.path.append(str(Path(__file__).resolve().parents[2]))
 
@@ -43,8 +50,8 @@ class Trainer:
         train_loader,
         val_loader,
         test_loader=None,
-        zh_model_path=None,  # 中文模型权重路径
-        en_model_path=None,  # 英文模型权重路径
+        zh_model_path="best_models/zh.pt",  # 中文模型权重路径
+        en_model_path="best_models/en.pt",  # 英文模型权重路径
         lr=1e-4,
         weight_decay=1e-5,
         device=None,
@@ -196,14 +203,19 @@ class Trainer:
                     # Multimodal data
                     inputs = {k: v.to(self.device) for k, v in batch.items() if k in ["text", "audio", "vision"]}
                     labels = batch["label"].to(self.device)
+                    language = batch["language"]
                 else:
                     # Unimodal data
-                    inputs, labels = batch
+                    inputs, labels, language = batch
                     inputs = inputs.to(self.device)
                     labels = labels.to(self.device)
                 
                 # Forward pass
-                outputs = self.model(inputs)
+                if language == "zh" and self.zh_model:
+                    outputs = self.zh_model(inputs)
+                elif language == "en" and self.en_model:
+                    outputs = self.en_model(inputs)
+                #outputs = self.model(inputs)
                 
                 # Calculate loss
                 if NUM_CLASSES > 1:

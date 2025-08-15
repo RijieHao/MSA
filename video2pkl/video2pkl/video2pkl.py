@@ -14,7 +14,6 @@ import mediapipe as mp
 import torch
 from scipy.signal import find_peaks
 from skimage.feature import hog
-import torchaudio
 import csv  # 添加 csv 模块
 
 
