@@ -15,6 +15,7 @@ import torch
 from scipy.signal import find_peaks
 from skimage.feature import hog
 import torchaudio
+import csv  # 添加 csv 模块
 
 
 # 配置参数
@@ -433,12 +434,24 @@ class MOSEIExtractor:
 #-------------------------------------生成pkl文件------------------------------------------------------
     def process_dataset(self, video_dir, csv_path, output_dir, audio_dir=None):
         """处理整个数据集并生成 .pkl 文件"""
+        # 如果 csv_path 为 None，自动生成 CSV 文件
+        if csv_path is None:
+            csv_path = Path(video_dir).parent / "generated_dataset.csv"
+            with open(csv_path, "w", newline="", encoding="utf-8") as f:
+                writer = csv.writer(f)
+                writer.writerow(["video_id", "clip_id", "label", "split", "class_label"])  # 写入表头
+                for video_file in Path(video_dir).rglob("*.mp4"):
+                    video_id = video_file.parent.name
+                    clip_id = video_file.stem
+                    writer.writerow([video_id, clip_id, -1, "test", "NEUT"])  # 写入默认值
+            print(f"自动生成的 CSV 文件已保存到: {csv_path}")
+
         # 加载标签和数据集划分信息
         splits = {"train": [], "valid": [], "test": []}
 
-        with open(csv_path, "r") as f:
+        with open(csv_path, "r", encoding="utf-8") as f:
             for line in f.readlines()[1:]:  # 跳过表头
-                video_id, clip_id, label, split,class_label = line.strip().split(",")
+                video_id, clip_id, label, split, class_label = line.strip().split(",")
                 video_path = Path(video_dir) / video_id / f"{clip_id}.mp4"
                 splits[split].append((video_path, float(label), class_label))
 
@@ -472,7 +485,6 @@ class MOSEIExtractor:
                 data[split]["labels"].append(label)
                 data[split]["id"].append(unique_id)  # 使用唯一 ID
                 data[split]["class_labels"].append(class_label)  # 添加类标签
-
 
         # 保存 .pkl 文件
         output_dir = Path(output_dir)

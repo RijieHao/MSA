@@ -7,12 +7,14 @@ from sklearn.decomposition import PCA
 from transformers import BertTokenizer, BertModel
 from moviepy.video.io.VideoFileClip import VideoFileClip
 import whisper
-from retinaface import RetinaFace
+from facenet_pytorch import MTCNN
 import cv2
 import torch
 import torchaudio
 from torchvision.models import resnet18
 from torchvision.transforms import Compose, ToPILImage, Resize, ToTensor, Normalize
+import pandas as pd
+from concurrent.futures import ThreadPoolExecutor
 
 
 # 配置参数
@@ -90,19 +92,21 @@ class MOSEIExtractor:
         self.device = "cuda" if torch.cuda.is_available() else "cpu"
 
         # 初始化 Whisper 模型
-        self.whisper_model = whisper.load_model("base").to(self.device)
+        self.whisper_model = whisper.load_model("/root/autodl-tmp/pre_models/whisper/base.pt", device=self.device)
 
         # 初始化 BERT 模型
-         # ===== 加载英文 BERT =====
-        self.en_tokenizer = BertTokenizer.from_pretrained("bert-base-uncased")
-        self.en_bert = BertModel.from_pretrained("bert-base-uncased").to(self.device).eval()
+        self.en_tokenizer = BertTokenizer.from_pretrained("/root/autodl-tmp/pre_models/bert-base-uncased")
+        self.en_bert = BertModel.from_pretrained("/root/autodl-tmp/pre_models/bert-base-uncased").to(self.device).eval()
 
-        # ===== 加载中文 BERT =====
-        self.zh_tokenizer = BertTokenizer.from_pretrained("bert-base-chinese")
-        self.zh_bert = BertModel.from_pretrained("bert-base-chinese").to(self.device).eval()
+        self.zh_tokenizer = BertTokenizer.from_pretrained("/root/autodl-tmp/pre_models/bert-base-chinese")
+        self.zh_bert = BertModel.from_pretrained("/root/autodl-tmp/pre_models/bert-base-chinese").to(self.device).eval()
+
+        # 初始化 MTCNN 模型（用于人脸检测）
+        self.mtcnn = MTCNN(keep_all=False, device=self.device)
 
         # 初始化 ResNet 模型
-        self.resnet_model = resnet18(pretrained=True)
+        self.resnet_model = resnet18()
+        self.resnet_model.load_state_dict(torch.load("/root/autodl-tmp/pre_models/resnet18.pth"))
         self.resnet_model = torch.nn.Sequential(*list(self.resnet_model.children())[:-1])  # 去掉最后的分类层
         self.resnet_model = self.resnet_model.to(self.device).eval()
 
@@ -141,7 +145,7 @@ class MOSEIExtractor:
     def extract_text_features(self, video_path, audio_path=None):
         """从视频或音频中提取文本特征并生成 BERT 嵌入"""
         # 如果提供了音频路径，则直接使用音频文件
-        video = VideoFileClip(video_path)
+        video = VideoFileClip(str(video_path))
         if audio_path:
             temp_audio = audio_path
         else:
@@ -180,7 +184,7 @@ class MOSEIExtractor:
     def extract_audio_features(self, video_path, audio_path=None):
         """从视频或音频中提取音频特征并生成高级特征"""
         # 如果提供了音频路径，则直接使用音频文件
-        video = VideoFileClip(video_path)
+        video = VideoFileClip(str(video_path))
         if audio_path:
             temp_audio = audio_path
         else:
@@ -200,8 +204,9 @@ class MOSEIExtractor:
 #-------------------------------------视频特征提取------------------------------------------------------
     def extract_visual_features(self, video_path):
         """从视频中提取视觉特征并生成高级特征"""
-        cap = cv2.VideoCapture(video_path)
+        cap = cv2.VideoCapture(str(video_path))
         features = []
+        frame_count = 0
 
         while cap.isOpened():
             ret, frame = cap.read()
@@ -224,13 +229,10 @@ class MOSEIExtractor:
         return features
 
     def _detect_face(self, frame):
-        gray = cv2.cvtColor(frame, cv2.COLOR_BGR2GRAY)
-        face_cascade = cv2.CascadeClassifier(cv2.data.haarcascades + "haarcascade_frontalface_default.xml")
-        faces = face_cascade.detectMultiScale(gray, scaleFactor=1.1, minNeighbors=5, minSize=(30, 30))
-
-        if len(faces) > 0:
-            x, y, w, h = faces[0]
-            return frame[y:y+h, x:x+w]
+        """使用 MTCNN 检测人脸并返回人脸区域"""
+        face = self.mtcnn(frame)
+        if face is not None:
+            return face.permute(1, 2, 0).cpu().numpy()  # 转换为 NumPy 格式
         return None
 
     def _extract_frame_features(self, face_region):

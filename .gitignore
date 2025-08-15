@@ -8,8 +8,8 @@ video2pkl/video2pkl/en_video/
 video2pkl/video2pkl/test_video/
 video2pkl/video2pkl/valid_video/
 MSAbypkl/models/
-video2pkl/unaligned_en.pkl
-video2pkl/unaligned_zh.pkl
+MSAbypkl/unaligned_en.pkl
+MSAbypkl/unaligned_zh.pkl
 video2pkl/video2pkl/mix_video/
 video2pkl/video2pkl/en_audio/
 video2pkl/video2pkl/*.zip

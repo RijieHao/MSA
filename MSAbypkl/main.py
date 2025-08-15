@@ -136,7 +136,7 @@ def train_model():
         modalities=modalities, 
         batch_size=batch_size,
         num_workers=0,
-        use_all_data=True,
+        #use_all_data=True,
         force_test_mode=True
     )
 
@@ -306,7 +306,7 @@ def evaluate_model():
         batch_size=batch_size,
         num_workers=0,
         #use_all_data=True,
-        #force_test_mode=True
+        force_test_mode=True
     )
     test_loader = dataloaders["test"]
     logger.info("Data loaded.")
