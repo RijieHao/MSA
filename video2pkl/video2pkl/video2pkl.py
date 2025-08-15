@@ -60,7 +60,7 @@ class MOSEIExtractor:
         """使用 Whisper 模型检测音频语言"""
         result = self.whisper_model.transcribe(audio_path, task="lang")
         detected_language = result["language"]
-        print(f"Detected language: {detected_language}")
+        #print(f"Detected language: {detected_language}")
         return detected_language
 
 

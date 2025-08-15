@@ -60,7 +60,7 @@ DROPOUT_RATE = 0.3
 SEED = 42
 
 # Batch size used for training
-BATCH_SIZE = 32
+BATCH_SIZE = 1
 
 # Learning rate for optimizer
 LEARNING_RATE = 1e-4

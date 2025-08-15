@@ -49,11 +49,7 @@ def main():
 
     # 使用 subprocess 调用 main.py 并传递参数
     subprocess.run(
-        [
-            "python", main_script,
-            "--choice", "2",  # 选择评估模式
-        ],
-        check=True
+        ["python", main_script],
     )
     print(f"模型评估完成，结果已保存到: {output_csv_path}")
 

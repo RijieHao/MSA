@@ -276,8 +276,8 @@ def evaluate_model():
     logger.info(f"Using device: {device}")
     logger.info(f"Batch size: {batch_size}")
     logger.info(f"Modalities: {modalities}")
-    logger.info(f"Chinese checkpoint: {zh_checkpoint}")
-    logger.info(f"English checkpoint: {en_checkpoint}")
+    #logger.info(f"Chinese checkpoint: {zh_checkpoint}")
+    #logger.info(f"English checkpoint: {en_checkpoint}")
     logger.info(f"Log directory: {log_dir}")
 
     # 加载数据
@@ -321,12 +321,12 @@ def evaluate_model():
     ).to(device)
 
     # 加载模型权重
-    logger.info(f"Loading Chinese model from checkpoint: {zh_checkpoint}")
+    #logger.info(f"Loading Chinese model from checkpoint: {zh_checkpoint}")
     zh_checkpoint_data = torch.load(zh_checkpoint, map_location=device)
     zh_model.load_state_dict(zh_checkpoint_data["model_state_dict"])
     zh_model.eval()
 
-    logger.info(f"Loading English model from checkpoint: {en_checkpoint}")
+    #logger.info(f"Loading English model from checkpoint: {en_checkpoint}")
     en_checkpoint_data = torch.load(en_checkpoint, map_location=device)
     en_model.load_state_dict(en_checkpoint_data["model_state_dict"])
     en_model.eval()
@@ -351,9 +351,9 @@ def evaluate_model():
                 labels = labels.to(device)
 
             # 根据语言选择模型
-            if language == "zh":
+            if language[0] == "zh":
                 outputs = zh_model(inputs)
-            elif language == "en":
+            elif language[0] == "en":
                 outputs = en_model(inputs)
             else:
                 logger.warning(f"Unknown language '{language}' for batch. Skipping...")
@@ -371,14 +371,24 @@ def evaluate_model():
             all_ids.extend(ids)
 
     # 保存预测结果到 CSV
+    reverse_label_mapping = {
+        0: "SNEG",
+        1: "WNEG",
+        2: "NEUT",
+        3: "WPOS",
+        4: "SPOS"
+    }
     output_csv_path = "Test_Results/label_prediction.csv"
     os.makedirs(os.path.dirname(output_csv_path), exist_ok=True)
     with open(output_csv_path, mode="w", newline="") as csvfile:
         writer = csv.writer(csvfile)
         writer.writerow(["ID", "Label"])
         for id_, pred in zip(all_ids, all_preds):
-            writer.writerow([id_, pred])
+            mapped_label = reverse_label_mapping.get(int(pred), "UNKNOWN")
+            writer.writerow([id_, mapped_label])
     logger.info(f"Predictions saved to {output_csv_path}")
+
+
 
     # 计算并记录指标
     #from src.training.metrics import evaluate_mosei
@@ -425,23 +435,23 @@ def main():
     
     The menu runs in a loop until the user chooses to exit.
     """
-    while True:
-        print_menu()
-        choice = input("Enter your choice (1-4): ").strip()
+    # while True:
+    #     print_menu()
+        #choice = input("Enter your choice (1-4): ").strip()
 
-        if choice == "1":
-            train_model()
-        elif choice == "2":
-            evaluate_model()
-        elif choice == "3":
-            visualize_results()
-        elif choice == "4":
-            logger.info("Exiting the console. Goodbye!")
-            break
-        else:
-            logger.error("Invalid choice. Please select 1-5.")
-            continue
-
+        # if choice == "1":
+        #     train_model()
+        # elif choice == "2":
+        #     evaluate_model()
+        # elif choice == "3":
+        #     visualize_results()
+        # elif choice == "4":
+        #     logger.info("Exiting the console. Goodbye!")
+        #     break
+        # else:
+        #     logger.error("Invalid choice. Please select 1-5.")
+        #     continue
+    evaluate_model()
 # Entry point
 if __name__ == "__main__":
     main()
