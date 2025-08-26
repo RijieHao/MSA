@@ -3,44 +3,46 @@ import pickle
 from pathlib import Path
 import numpy as np
 
+
 def inspect_pkl_structure(pkl_dir):
-    """
-    检查指定文件夹中的 .pkl 文件结构并打印内容摘要。
-    
+    """Inspect .pkl files in a directory and print a brief summary.
+
     Args:
-        pkl_dir (str): 包含 .pkl 文件的文件夹路径。
+        pkl_dir (str): Path to the folder containing .pkl files.
     """
+
     pkl_dir = Path(pkl_dir)
     if not pkl_dir.exists():
-        print(f"❌ 文件夹 {pkl_dir} 不存在！")
+        print(f"❌ Folder {pkl_dir} does not exist!")
         return
 
-    # 遍历文件夹中的所有 .pkl 文件
+    # Iterate over all .pkl files in the folder
     for pkl_file in pkl_dir.glob("*.pkl"):
-        print(f"\n📂 正在检查文件: {pkl_file.name}")
+        print(f"\n📂 Inspecting file: {pkl_file.name}")
         try:
             with open(pkl_file, "rb") as f:
                 data = pickle.load(f)
 
-            # 打印文件内容摘要
+            # Print a summary of the file contents
             if isinstance(data, dict):
-                print(f"✅ 文件内容为字典，包含以下键：{list(data.keys())}")
+                print(f"✅ File is a dict with keys: {list(data.keys())}")
                 for key, value in data.items():
                     if isinstance(value, list):
-                        print(f"  - {key}: 列表，长度为 {len(value)}")
+                        print(f"  - {key}: list, length {len(value)}")
                         if len(value) > 0:
-                            print(f"    示例数据类型: {type(value[0])}")
+                            print(f"    Example data type: {type(value[0])}")
                             if isinstance(value[0], (list, np.ndarray)):
-                                print(f"    示例数据形状: {np.array(value[0]).shape}")
+                                print(f"    Example data shape: {np.array(value[0]).shape}")
                     else:
-                        print(f"  - {key}: 类型为 {type(value)}")
+                        print(f"  - {key}: type {type(value)}")
             else:
-                print(f"⚠️ 文件内容不是字典，类型为 {type(data)}")
+                print(f"⚠️ File content is not a dict, type {type(data)}")
 
         except Exception as e:
-            print(f"❌ 无法读取文件 {pkl_file.name}，错误信息：{e}")
+            print(f"❌ Failed to read file {pkl_file.name}, error: {e}")
+
 
 if __name__ == "__main__":
-    # 设置包含 .pkl 文件的文件夹路径
-    pkl_directory = "Multimodal-Sentiment-Analysis-with-MOSEI-Dataset\data\processed\CMU_MOSEI"  # 替换为您的 .pkl 文件夹路径
+    # Set path to the folder that contains .pkl files
+    pkl_directory = "Multimodal-Sentiment-Analysis-with-MOSEI-Dataset\\data\\processed\\CMU_MOSEI"  # Replace with your .pkl directory path
     inspect_pkl_structure(pkl_directory)

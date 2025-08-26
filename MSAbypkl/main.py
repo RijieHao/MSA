@@ -320,14 +320,34 @@ def evaluate_model():
         num_classes=NUM_CLASSES
     ).to(device)
 
-    # 加载模型权重
-    #logger.info(f"Loading Chinese model from checkpoint: {zh_checkpoint}")
-    zh_checkpoint_data = torch.load(zh_checkpoint, map_location=device)
+    # 加载模型权重（增加文件存在性检查以避免崩溃）
+    def _safe_load_checkpoint(path_str):
+        path = Path(path_str)
+        if not path.exists():
+            logger.error(
+                f"Checkpoint not found: {path}.\n"
+                "请将对应的模型文件放到仓库根目录的 best_models/ 下，或者在 MSAbypkl/main.py 中修改路径。\n"
+                "模型下载链接请参考项目 README: https://drive.google.com/drive/folders/1deCsD3TXacpuov78v7PldhXL5zFSjNjL"
+            )
+            return None
+        try:
+            data = torch.load(path, map_location=device)
+            return data
+        except Exception as e:
+            logger.exception(f"Failed to load checkpoint {path}: {e}")
+            return None
+
+    zh_checkpoint_data = _safe_load_checkpoint(zh_checkpoint)
+    if zh_checkpoint_data is None:
+        logger.error("Chinese checkpoint load failed — aborting evaluation.")
+        return
     zh_model.load_state_dict(zh_checkpoint_data["model_state_dict"])
     zh_model.eval()
 
-    #logger.info(f"Loading English model from checkpoint: {en_checkpoint}")
-    en_checkpoint_data = torch.load(en_checkpoint, map_location=device)
+    en_checkpoint_data = _safe_load_checkpoint(en_checkpoint)
+    if en_checkpoint_data is None:
+        logger.error("English checkpoint load failed — aborting evaluation.")
+        return
     en_model.load_state_dict(en_checkpoint_data["model_state_dict"])
     en_model.eval()
 

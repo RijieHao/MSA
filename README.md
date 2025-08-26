@@ -48,7 +48,11 @@ MSA/
 └── Test_Data / Test_Results # Example data & outputs
 ```
 
+<<<<<<< HEAD
+📖 More details: [项目结构与分析.md](./项目结构与分析.md)
+=======
 📖 More details: 
+>>>>>>> f99ff690a41ea56e53a713625cd7bde40bb4c8d8
 
 ---
 
@@ -112,7 +116,66 @@ python MSAbyvideo/main.py
 
 ---
 
+<<<<<<< HEAD
+## 🔧 Troubleshooting / Common Issues
+
+Below are the issues we encountered during local debugging, their typical causes, and recommended fixes to help you reproduce results quickly.
+
+### 1) FileNotFoundError: ffmpeg not found
+
+- Symptom (example trace): raised when calling `Whisper.transcribe()` or when MoviePy opens a video file (under the hood these call the `ffmpeg` executable).
+- Cause: Whisper and MoviePy rely on the system `ffmpeg` binary. If `ffmpeg` is not installed or not on PATH, a subprocess FileNotFoundError is raised.
+- Fix (Windows examples):
+  - Using winget (recommended if available):
+    ```powershell
+    winget install --id Gyan.FFmpeg -e --silent
+    ```
+  - Using Chocolatey (requires admin):
+    ```powershell
+    choco install -y ffmpeg
+    ```
+  - Manual install: download ffmpeg and add its `bin` folder to PATH (e.g. `C:\ffmpeg\bin`):
+    ```powershell
+    setx PATH "$env:Path;C:\ffmpeg\bin"
+    ```
+  - Verify installation:
+    ```powershell
+    ffmpeg -version
+    ```
+
+Note: We also applied a small code-level fix to avoid a MoviePy Path/WindowsPath issue by ensuring file paths are passed as strings (see `video2pkl/video2pkl.py` and `video2pkl/video2csd/get_3m.py`).
+
+Note about fallback behavior:
+
+- The codebase now attempts a graceful fallback when a system `ffmpeg` is not available: if the Python package `imageio-ffmpeg` is installed, the project will locate its bundled ffmpeg binary and make it available to subprocess calls by temporarily copying it to a local temp directory named `msaffmpeg` and prepending that directory to the process `PATH`.
+- This makes `test_script.py` and Whisper/MoviePy work even when ffmpeg is not installed system-wide. The fallback relies on `imageio-ffmpeg` being installed; `imageio-ffmpeg==0.5.1` is already included in `requirements.txt`.
+
+### 2) FileNotFoundError: best_models/zh.pt (or en.pt)
+
+- Symptom: a FileNotFoundError occurs when `torch.load(...)` is called to load a checkpoint (this can appear during evaluation in `MSAbypkl/main.py`).
+- Fix options:
+  - Download the required checkpoint files and place them into the repository `best_models/` folder using the exact filenames (e.g. `best_models/zh.pt`, `best_models/en.pt`).
+  - Or update the checkpoint paths in `MSAbypkl/main.py` to point to your local checkpoint locations.
+
+---
+
+## 📥 Pre-trained & Best Models
+
+- Pre-trained text models and our best checkpoints (Chinese / English) are available here:
+
+  https://drive.google.com/drive/folders/1deCsD3TXacpuov78v7PldhXL5zFSjNjL
+- After downloading, place the files under the repository root `best_models/` directory:
+
+  - `best_models/zh.pt`
+  - `best_models/en.pt`
+  - Alternatively, update `MSAbypkl/main.py` to load from your custom paths.
+
+---
+
+## � Results
+=======
 ## 📊 Results
+>>>>>>> f99ff690a41ea56e53a713625cd7bde40bb4c8d8
 
 - 🏆 **Public Leaderboard**: `0.4350` (baseline-level, CPU-only training)
 - 🔬 **Ablations**: Cross-attention > Early fusion > Late fusion
