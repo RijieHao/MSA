@@ -1,26 +1,26 @@
-from mmsdk import mmdatasdk as md
+
 import numpy as np
+import h5py  # ensure h5py is installed
+from mmsdk import mmdatasdk as md
+
 dataset1 = {}
-dataset1["language"] = "our_MSA\ch_video_preprocess_debug\CMU_MOSEI_TimestampedWordVectors.csd"
-dataset1["acoustic"] = "our_MSA\ch_video_preprocess_debug\CMU_MOSEI_COVAREP.csd"
-dataset1["visual"] = "our_MSA\ch_video_preprocess_debug\CMU_MOSEI_VisualFacet42.csd"
-dataset1["labels"] = "our_MSA\ch_video_preprocess_debug\CMU_MOSEI_Labels.csd"
+dataset1["language"] = r"our_MSA\ch_video_preprocess_debug\CMU_MOSEI_TimestampedWordVectors.csd"
+dataset1["acoustic"] = r"our_MSA\ch_video_preprocess_debug\CMU_MOSEI_COVAREP.csd"
+dataset1["visual"] = r"our_MSA\ch_video_preprocess_debug\CMU_MOSEI_VisualFacet42.csd"
+dataset1["labels"] = r"our_MSA\ch_video_preprocess_debug\CMU_MOSEI_Labels.csd"
 
 dataset2 = {}
 dataset2["language"] = "Multimodal-Sentiment-Analysis-with-MOSEI-Dataset/data/raw/CMU_MOSEI/CMU_MOSEI_TimestampedWordVectors.csd"
 dataset2["acoustic"] = "Multimodal-Sentiment-Analysis-with-MOSEI-Dataset/data/raw/CMU_MOSEI/CMU_MOSEI_COVAREP.csd"
 dataset2["visual"] = "Multimodal-Sentiment-Analysis-with-MOSEI-Dataset/data/raw/CMU_MOSEI/CMU_MOSEI_VisualFacet42.csd"
 dataset2["labels"] = "Multimodal-Sentiment-Analysis-with-MOSEI-Dataset/data/raw/CMU_MOSEI/CMU_MOSEI_Labels.csd"
-
-
-from mmsdk import mmdatasdk as md
-import h5py  # 确保 h5py 已安装
 def print_h5_structure(h5file, path="/", indent=0):
     """
-    递归打印 HDF5 文件的层级结构，显示 Group 和 Dataset 的路径、keys 层级，以及 Dataset 的 shape 和 dtype
-    :param h5file: HDF5 文件对象
-    :param path: 当前路径
-    :param indent: 缩进级别
+    Recursively print the HDF5 file hierarchical structure showing Group and Dataset paths,
+    the keys hierarchy, and each Dataset's shape and dtype.
+    :param h5file: HDF5 file object
+    :param path: current path
+    :param indent: indentation level
     """
     obj = h5file[path]
     if isinstance(obj, h5py.Group):
@@ -32,11 +32,11 @@ def print_h5_structure(h5file, path="/", indent=0):
 
 def display_csd_structure(csd_file_path):
     """
-    打印 CSD 文件的层级结构
+    Print the CSD file's hierarchical structure
     """
     with h5py.File(csd_file_path, "r") as h5file:
-        print(f"打印 CSD 文件的层级结构: {csd_file_path}")
-        print_h5_structure(h5file)
+    print(f"Print CSD file hierarchical structure: {csd_file_path}")
+    print_h5_structure(h5file)
 
 csd_file_path = "Multimodal-Sentiment-Analysis-with-MOSEI-Dataset/data/raw/CMU_MOSEI/CMU_MOSEI_TimestampedWords.csd"
 display_csd_structure(csd_file_path)

@@ -5,53 +5,53 @@ from pathlib import Path
 from video2pkl.video2pkl.video2pkl import MOSEIExtractor
 
 def generate_csv(video_dir, output_csv):
-    """从 Test_Data 文件夹生成 CSV 文件"""
+    """Generate a CSV file from the Test_Data directory"""
     with open(output_csv, mode='w', newline='', encoding='utf-8') as file:
         writer = csv.writer(file)
-        # 写入表头
+    # write header
         writer.writerow(["VideoDir", "VideoName", "Label", "Split", "ClassLabel"])
-        # 遍历视频文件夹
+    # iterate over video directory
         for video_file in os.listdir(video_dir):
             if video_file.endswith(".mp4"):
-                video_name = os.path.splitext(video_file)[0]  # 去掉后缀
+                video_name = os.path.splitext(video_file)[0]  # remove file extension
                 writer.writerow(["", video_name, -1, "test", "NEUT"])
 
 def main():
-    # 视频文件夹路径
-    video_dir = "Test_Data"  # Test_Data 文件夹路径
-    # 生成的 CSV 文件路径
+    # path to video directory
+    video_dir = "Test_Data"
+    # generated CSV file path
     output_csv = "test_data.csv"
-    # 生成的 .pkl 文件输出目录
+    # generated .pkl output directory
     output_pkl_dir = "MSAbypkl/data/data_pkl/test_pkl"
 
-    # 生成 CSV 文件
+    # generate CSV file
     generate_csv(video_dir, output_csv)
-    print(f"CSV 文件已生成: {output_csv}")
+    print(f"CSV file generated: {output_csv}")
 
-    # 初始化 MOSEIExtractor
+    # initialize MOSEIExtractor
     processor = MOSEIExtractor(language="unknown")
-    # 调用 process_dataset 方法生成 .pkl 文件
+    # call process_dataset to produce .pkl files
     processor.process_dataset(
         video_dir=video_dir,
         csv_path=output_csv,
         output_dir=output_pkl_dir,
-        audio_dir=None  # 不使用音频文件夹
+        audio_dir=None  # do not use audio directory
     )
-    print(f"特征提取完成，pkl 文件已生成到: {output_pkl_dir}")
+    print(f"Feature extraction complete, pkl files written to: {output_pkl_dir}")
 
-    # 运行 MSAbypkl\main.py 并选择模型评估
+    # run MSAbypkl\main.py and choose model evaluation
     main_script = "MSAbypkl/main.py"
     model_checkpoint = "best_models/en.pt"
     output_csv_path = "Test_Results/label_prediction.csv"
 
-    # 确保输出目录存在
+    # ensure output directory exists
     os.makedirs(os.path.dirname(output_csv_path), exist_ok=True)
 
-    # 使用 subprocess 调用 main.py 并传递参数
+    # use subprocess to call main.py
     subprocess.run(
         ["python", main_script],
     )
-    print(f"模型评估完成，结果已保存到: {output_csv_path}")
+    print(f"Model evaluation finished, results saved to: {output_csv_path}")
 
 if __name__ == "__main__":
     main()
