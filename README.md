@@ -48,7 +48,11 @@ MSA/
 └── Test_Data / Test_Results # Example data & outputs
 ```
 
+<<<<<<< HEAD
 📖 More details: [项目结构与分析.md](./项目结构与分析.md)
+=======
+📖 More details: 
+>>>>>>> f99ff690a41ea56e53a713625cd7bde40bb4c8d8
 
 ---
 
@@ -112,6 +116,7 @@ python MSAbyvideo/main.py
 
 ---
 
+<<<<<<< HEAD
 ## 🔧 Troubleshooting / Common Issues
 
 Below are the issues we encountered during local debugging, their typical causes, and recommended fixes to help you reproduce results quickly.
@@ -168,6 +173,9 @@ Note about fallback behavior:
 ---
 
 ## � Results
+=======
+## 📊 Results
+>>>>>>> f99ff690a41ea56e53a713625cd7bde40bb4c8d8
 
 - 🏆 **Public Leaderboard**: `0.4350` (baseline-level, CPU-only training)
 - 🔬 **Ablations**: Cross-attention > Early fusion > Late fusion
