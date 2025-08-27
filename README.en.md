@@ -1,17 +1,7 @@
 # 🌏 Cross-Lingual Multimodal Sentiment Analysis (MSA)
 
-<p align="center">
-  <a href="./README.en.md"><img src="https://img.shields.io/badge/English-EN-blue?style=for-the-badge&logo=github" alt="English"></a>
-  &nbsp;&nbsp;
-  <a href="./README.zh.md"><img src="https://img.shields.io/badge/中文-ZH-red?style=for-the-badge&logo=github" alt="中文"></a>
-</p>
-
----
-
-[![Python](https://img.shields.io/badge/python-3.8+-blue.svg)](https://www.python.org/)
-
-[![PyTorch](https://img.shields.io/badge/PyTorch-2.2+-ee4c2c.svg)](https://pytorch.org/)
-
+[![Python](https://img.shields.io/badge/python-3.8+-blue.svg)]()
+[![PyTorch](https://img.shields.io/badge/PyTorch-2.2+-ee4c2c.svg)]()
 [![License](https://img.shields.io/badge/license-MIT-green.svg)](./LICENSE)
 
 > **Chinese–English Cross-Lingual Multimodal Sentiment Analysis Framework**
@@ -48,7 +38,7 @@ MSA/
 ├── test_script.py           # One-click testing
 ├── best_models/             # Pre-trained weights (en.pt / zh.pt)
 ├── MSAbypkl/                # PKL-based workflow (train/eval)
-│   ├── main.py		     # Training & evaluation
+│   ├── main.py	     # Training & evaluation
 |   ├── config.py            # Modify parameters
 │   ├── scripts/             # Training scripts
 │   └── src/                 # Core modules (data/models/training/utils)
