@@ -2,7 +2,7 @@
 
 [![Python](https://img.shields.io/badge/python-3.8+-blue.svg)]()
 [![PyTorch](https://img.shields.io/badge/PyTorch-2.2+-ee4c2c.svg)]()
-[![License](https://img.shields.io/badge/license-MIT-green.svg)]()
+[![License](https://img.shields.io/badge/license-MIT-green.svg)](./LICENSE)
 
 > **Chinese–English Cross-Lingual Multimodal Sentiment Analysis Framework**
 > 🎥 End-to-end **Video → Sentiment** prediction
