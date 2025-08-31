@@ -49,19 +49,19 @@ def extract_features(video_dir, csv_path, audio_dir=None):
     }
 
     # 第一遍：收集视觉特征用于拟合 PCA
-    all_visual_features = []
-    with open(csv_path, "r") as f:
-        lines = f.readlines()[1:]
-    for line in lines:
-        video_id, clip_id, class_label = line.strip().split(",")
-        video_path = Path(video_dir) / video_id / f"{clip_id}.mp4"
-        if video_path.exists():
-            visual_raw = processor.extract_visual_features(video_path)
-            all_visual_features.append(visual_raw)
+    # all_visual_features = []
+    # with open(csv_path, "r") as f:
+    #     lines = f.readlines()[1:]
+    # for line in lines:
+    #     video_id, clip_id, class_label = line.strip().split(",")
+    #     video_path = Path(video_dir) / video_id / f"{clip_id}.mp4"
+    #     if video_path.exists():
+    #         visual_raw = processor.extract_visual_features(video_path)
+    #         all_visual_features.append(visual_raw)
     
     # 拟合 PCA（如果有足够样本）
-    if len(all_visual_features) > 0:
-        processor.fit_pca(all_visual_features)
+    # if len(all_visual_features) > 0:
+    #     processor.fit_pca(all_visual_features)
 
     # 第二遍：提取所有特征（现在 PCA 已拟合）
     with open(csv_path, "r") as f:
@@ -242,11 +242,11 @@ class MOSEIExtractor:
         cap.release()
 
         if not features:
-            return np.zeros(VISUAL_FEATURE_SIZE)
+            return np.zeros(512)  # 返回 ResNet 原始维度（512）的零向量，确保维度一致
 
         features = np.mean(features, axis=0)
-        if self.pca_fitted:
-            features = self.pca.transform([features])[0]
+        # if self.pca_fitted:
+        #     features = self.pca.transform([features])[0]
         return features
 
     def _detect_face(self, frame):
