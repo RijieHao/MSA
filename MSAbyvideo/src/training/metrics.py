@@ -155,6 +155,17 @@ def get_predictions(model, dataloader, device, output_csv_path=None):
             
             labels = labels.cpu().numpy()
             
+            # Ensure preds and labels are at least 1-D (handle batch_size==1 -> 0-d arrays)
+            preds = np.atleast_1d(preds)
+            labels = np.atleast_1d(labels)
+
+            # Normalize ids to a Python list for consistent extension
+            if isinstance(ids, torch.Tensor):
+                ids = ids.cpu().numpy().tolist()
+            elif isinstance(ids, np.ndarray):
+                ids = ids.tolist()
+            elif isinstance(ids, (str, int)):
+                ids = [ids]
             # 添加 NaN 处理
             preds = np.where(np.isnan(preds), 0.0, preds)  # 将 NaN 替换为 0
             preds = np.where(np.isinf(preds), 0.0, preds)  # 将 Inf 替换为 0

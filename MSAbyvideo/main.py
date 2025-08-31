@@ -93,7 +93,7 @@ def train_model():
         csv_path=csv_path,
         batch_size=batch_size,
         audio_dir=audio_dir,
-        all_test=all_test
+        all_test=False  # all_test
     )
 
     # Create model
@@ -221,7 +221,7 @@ def evaluate_model():
         csv_path=csv_path,
         batch_size=batch_size,
         audio_dir=audio_dir,
-        all_test=all_test
+        all_test=False #all_test
     )
     test_loader = dataloaders["test"]
     logger.info("Data loaded.")
@@ -276,15 +276,29 @@ def visualize_results():
     plot_path = Path(log_dir) / "multimodal_training_curves.png"
     scatter_path = Path(log_dir) / "test_predictions.png"
 
+    def _open_path(p):
+        try:
+            if sys.platform == "darwin":
+                os.system(f"open '{p}'")
+            elif sys.platform.startswith("linux"):
+                os.system(f"xdg-open '{p}'")
+            elif sys.platform.startswith("win"):
+                # Windows
+                os.startfile(str(p))
+            else:
+                logger.warning("Platform not recognized, cannot open file automatically.")
+        except Exception as e:
+            logger.error(f"Failed to open {p}: {e}")
+
     if plot_path.exists():
         logger.info(f"Opening training curves: {plot_path}")
-        os.system(f"open '{plot_path}'" if sys.platform == "darwin" else f"xdg-open '{plot_path}'")
+        _open_path(plot_path)
     else:
         logger.error("Training curves plot not found.")
 
     if scatter_path.exists():
         logger.info(f"Opening prediction scatter plot: {scatter_path}")
-        os.system(f"open '{scatter_path}'" if sys.platform == "darwin" else f"xdg-open '{scatter_path}'")
+        _open_path(scatter_path)
     else:
         logger.error("Prediction scatter plot not found.")
 

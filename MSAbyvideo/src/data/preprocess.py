@@ -48,7 +48,22 @@ def extract_features(video_dir, csv_path, audio_dir=None):
         "class_labels": []
     }
 
-    # 加载 CSV 文件
+    # 第一遍：收集视觉特征用于拟合 PCA
+    # all_visual_features = []
+    # with open(csv_path, "r") as f:
+    #     lines = f.readlines()[1:]
+    # for line in lines:
+    #     video_id, clip_id, class_label = line.strip().split(",")
+    #     video_path = Path(video_dir) / video_id / f"{clip_id}.mp4"
+    #     if video_path.exists():
+    #         visual_raw = processor.extract_visual_features(video_path)
+    #         all_visual_features.append(visual_raw)
+    
+    # 拟合 PCA（如果有足够样本）
+    # if len(all_visual_features) > 0:
+    #     processor.fit_pca(all_visual_features)
+
+    # 第二遍：提取所有特征（现在 PCA 已拟合）
     with open(csv_path, "r") as f:
         for line in f.readlines()[1:]:  # 跳过表头
             video_id, clip_id, class_label = line.strip().split(",")
@@ -90,23 +105,29 @@ class MOSEIExtractor:
     def __init__(self, language="unknown"):
         self.language = language
         self.device = "cuda" if torch.cuda.is_available() else "cpu"
-
+        
+        # 获取项目根目录路径
+        project_root = Path(__file__).resolve().parents[3]  # 向上3级到项目根目录
+        
         # 初始化 Whisper 模型
-        self.whisper_model = whisper.load_model("/root/autodl-tmp/pre_models/whisper/base.pt", device=self.device)
+        self.whisper_model = whisper.load_model("base", device=self.device)
 
         # 初始化 BERT 模型
-        self.en_tokenizer = BertTokenizer.from_pretrained("/root/autodl-tmp/pre_models/bert-base-uncased")
-        self.en_bert = BertModel.from_pretrained("/root/autodl-tmp/pre_models/bert-base-uncased").to(self.device).eval()
+        bert_en_path = project_root / "bert-base-uncased"
+        self.en_tokenizer = BertTokenizer.from_pretrained(str(bert_en_path))
+        self.en_bert = BertModel.from_pretrained(str(bert_en_path)).to(self.device).eval()
 
-        self.zh_tokenizer = BertTokenizer.from_pretrained("/root/autodl-tmp/pre_models/bert-base-chinese")
-        self.zh_bert = BertModel.from_pretrained("/root/autodl-tmp/pre_models/bert-base-chinese").to(self.device).eval()
+        bert_zh_path = project_root / "bert-base-chinese"
+        self.zh_tokenizer = BertTokenizer.from_pretrained(str(bert_zh_path))
+        self.zh_bert = BertModel.from_pretrained(str(bert_zh_path)).to(self.device).eval()
 
         # 初始化 MTCNN 模型（用于人脸检测）
         self.mtcnn = MTCNN(keep_all=False, device=self.device)
 
         # 初始化 ResNet 模型
+        resnet_path = project_root / "resnet18" / "resnet18-f37072fd.pth"
         self.resnet_model = resnet18()
-        self.resnet_model.load_state_dict(torch.load("/root/autodl-tmp/pre_models/resnet18.pth"))
+        self.resnet_model.load_state_dict(torch.load(str(resnet_path)))
         self.resnet_model = torch.nn.Sequential(*list(self.resnet_model.children())[:-1])  # 去掉最后的分类层
         self.resnet_model = self.resnet_model.to(self.device).eval()
 
@@ -215,17 +236,17 @@ class MOSEIExtractor:
 
             face_region = self._detect_face(frame)
             if face_region is not None:
-                feature = self._extract_frame_features(face_region)
+                feature = self._extract_frame_features(face_region) 
                 features.append(feature)
 
         cap.release()
 
         if not features:
-            return np.zeros(VISUAL_FEATURE_SIZE)
+            return np.zeros(512)  # 返回 ResNet 原始维度（512）的零向量，确保维度一致
 
         features = np.mean(features, axis=0)
-        if self.pca_fitted:
-            features = self.pca.transform([features])[0]
+        # if self.pca_fitted:
+        #     features = self.pca.transform([features])[0]
         return features
 
     def _detect_face(self, frame):

@@ -150,6 +150,30 @@ python MSAbyvideo/main.py
   - 下载所需 checkpoint 文件并放到仓库根目录的 `best_models/` 文件夹，且文件名与代码中期待的相同（例如 `best_models/zh.pt`, `best_models/en.pt`）。
   - 或者在 `MSAbypkl/main.py` 中把 checkpoint 路径改为你本地的路径。
 
+### 3）ImportError: recursion is detected during loading of "cv2" binary extensions
+
+- 现象：Python 中导入 cv2 时 OpenCV 加载失败，出现递归错误。
+- 原因：OpenCV 安装冲突或安装损坏，通常由于多个版本或安装不完整导致。
+- 修复方法：
+  - 卸载现有的 OpenCV 包：
+    ```bash
+    pip uninstall opencv-contrib-python opencv-python -y
+    ```
+  - 重新安装稳定版本：
+    ```bash
+    pip install opencv-python==4.8.0.76
+    ```
+  - 验证安装：
+    ```bash
+    python -c "import cv2; print('OpenCV version:', cv2.__version__)"
+    ```
+
+### 4）RuntimeError: Model not found（Whisper 模型加载错误）
+
+- 现象：Whisper 模型加载失败，出现路径相关错误。
+- 原因：代码中硬编码的模型路径在当前系统上不存在。
+- 修复方法：代码已更新为使用在线 Whisper 模型而不是本地路径。确保有网络连接进行初始模型下载，或者根据需要更新代码以使用本地模型路径。
+
 ---
 
 ## 📥 预训练模型与最佳模型
