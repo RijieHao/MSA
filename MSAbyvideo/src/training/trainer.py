@@ -117,6 +117,10 @@ class Trainer:
                 inputs, labels = batch
                 inputs = inputs.to(self.device)
                 labels = labels.to(self.device)
+
+            # Ensure labels dtype matches loss expectation: float for regression, long for classification
+            if NUM_CLASSES == 1:
+                labels = labels.float()
             
             # Reset gradients
             self.optimizer.zero_grad()
@@ -126,8 +130,10 @@ class Trainer:
             
             # Calculate loss
             if NUM_CLASSES == 5:
+                # classification (CrossEntropyLoss expects Long labels)
                 loss = self.criterion(outputs.squeeze(), labels.squeeze())
             else:
+                # regression (MSELoss expects Float labels)
                 loss = self.criterion(outputs.squeeze(), labels)
 
             # Backward pass and optimize
@@ -174,14 +180,15 @@ class Trainer:
                 # Forward pass
                 outputs = self.model(inputs)
                 
-                # Calculate loss
+                # Calculate loss and predictions
                 if NUM_CLASSES > 1:
+                    # classification: ensure integer labels
                     loss = self.criterion(outputs, labels.long())
                     preds = torch.argmax(outputs, dim=1).cpu().numpy()
                 else:
+                    # regression: use float labels
                     loss = self.criterion(outputs.squeeze(), labels.float())
                     preds = outputs.squeeze().cpu().numpy()
-                loss = self.criterion(outputs.squeeze(), labels.squeeze())
                 
                 # Update statistics
                 val_loss += loss.item()
