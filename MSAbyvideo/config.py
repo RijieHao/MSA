@@ -26,7 +26,7 @@ TEXT_MAX_LENGTH = 128
 
 # Feature dimensions for each modality
 AUDIO_FEATURE_SIZE = 40#un_zh:25 ,normal:40     # Number of MFCC features per audio frame
-VISUAL_FEATURE_SIZE = 35 #un_zh:177;normal:46;noraml2:35     # Number of facial landmark points or visual features
+VISUAL_FEATURE_SIZE = 512  #un_zh:177;normal:46;noraml2:35     # Number of facial landmark points or visual features
 
 # Dimensionality of the BERT-based text embeddings
 TEXT_EMBEDDING_DIM = 768

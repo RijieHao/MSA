@@ -150,6 +150,30 @@ Note about fallback behavior:
   - Download the required checkpoint files and place them into the repository `best_models/` folder using the exact filenames (e.g. `best_models/zh.pt`, `best_models/en.pt`).
   - Or update the checkpoint paths in `MSAbypkl/main.py` to point to your local checkpoint locations.
 
+### 3) ImportError: recursion is detected during loading of "cv2" binary extensions
+
+- Symptom: OpenCV fails to load with recursion error when importing cv2 in Python.
+- Cause: OpenCV installation conflict or corrupted installation, often due to multiple versions or incomplete installation.
+- Fix:
+  - Uninstall existing OpenCV packages:
+    ```bash
+    pip uninstall opencv-contrib-python opencv-python -y
+    ```
+  - Reinstall stable version:
+    ```bash
+    pip install opencv-python==4.8.0.76
+    ```
+  - Verify installation:
+    ```bash
+    python -c "import cv2; print('OpenCV version:', cv2.__version__)"
+    ```
+
+### 4) RuntimeError: Model not found (Whisper model loading error)
+
+- Symptom: Whisper model fails to load with path-related errors.
+- Cause: Hardcoded model paths in code that don't exist on current system.
+- Fix: The code has been updated to use online Whisper models instead of local paths. Ensure you have internet connection for initial model download, or update the code to use your local model paths if preferred.
+
 ---
 
 ## 📥 Pre-trained & Best Models

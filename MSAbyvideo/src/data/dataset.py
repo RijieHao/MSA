@@ -39,7 +39,7 @@ class MultimodalDataset(Dataset):
             "text": torch.tensor(self.data["text"][idx], dtype=torch.float32),
             "audio": torch.tensor(self.data["audio"][idx], dtype=torch.float32),
             "vision": torch.tensor(self.data["vision"][idx], dtype=torch.float32),
-            "class_label": self.data["class_labels"][idx],
+            "label": self.data["class_labels"][idx],
         }
 '''
 class MOSEIDataset(Dataset):
